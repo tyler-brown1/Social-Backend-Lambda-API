@@ -1,4 +1,4 @@
-import os,pg8000,random,bcrypt
+import os,pg8000,random
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -29,7 +29,7 @@ def create_tables():
     CREATE TABLE users(
         user_id SERIAL PRIMARY KEY,
         username VARCHAR(12) UNIQUE NOT NULL,
-        pass_hash VARCHAR(64) NOT NULL
+        password_hash VARCHAR(64) NOT NULL
     )"""
     posts_create = """
     CREATE TABLE posts(

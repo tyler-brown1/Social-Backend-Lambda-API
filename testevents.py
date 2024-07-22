@@ -2,7 +2,7 @@ post_user_event = {
   "httpMethod": "POST",
   "path": "/user",
   "body": {
-    "username": "bob327",
+    "username": "bob328",
     "password": "thisIsMyPassword"
   }
 }
@@ -11,7 +11,7 @@ get_user_event = {
   "httpMethod": "GET",
   "path": "/user",
   "queryStringParameters": {
-    "username": "bob326",
+    "username": "bob327",
   }
 }
 

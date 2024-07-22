@@ -12,6 +12,7 @@ db_port = os.environ['DB_PORT']
 
 user_path = "/user"
 user_auth = "/user/auth"
+post_path = '/post'
 
 
 conn = pg8000.connect(
@@ -31,21 +32,25 @@ def lambda_handler(event,context):
 
     try:
         if path == user_path and method == 'POST':
-            return add_entry(event)
+            return create_user(event)
         elif path == user_path and method == 'GET':
-            return get_entry(event)
+            return get_user(event)
         elif path == user_auth and method == 'GET':
             return validate_user(event)
+        elif path == post_path and method == 'GET':
+            return get_post(event)
+        elif path == post_path and method == 'POST':
+            return create_post(event)
         else:
             return build_response(400,(method,path))
-    except IndentationError: #Exception as e:
+    except Exception as e:
         return build_response(500,type("e").__name__)
     
     finally:
         cursor.close()
         conn.close()
 
-def add_entry(e):
+def create_user(e):
     BODY = e.get('body')
     if not BODY:
         return build_response(400,"No Body")
@@ -57,13 +62,13 @@ def add_entry(e):
     salt = os.urandom(16)
     hashed_password = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt, 10000)
     hash = base64.b64encode(salt+hashed_password).decode('utf-8')
-    statement = "INSERT INTO users (username,pass_hash) VALUES(%s,%s)"
+    statement = "INSERT INTO users (username,password_hash) VALUES(%s,%s)"
     cursor.execute(statement,(user,hash))
     conn.commit()
     
     return build_response(200,'Successfully added!')
 
-def get_entry(e):
+def get_user(e):
     QSP = e.get('queryStringParameters')
     if not QSP:
         return build_response(400,"No Query String Parameters")
@@ -89,7 +94,7 @@ def validate_user(e):
     if None in [user,guess]:
         return build_response(400,"Invalid Body Parameters")
     
-    get_user_statement = 'SELECT pass_hash FROM USERS WHERE username = %s'
+    get_user_statement = 'SELECT password_hash FROM USERS WHERE username = %s'
     cursor.execute(get_user_statement,(user,))
     found = cursor.fetchone()
     if not found:
@@ -106,6 +111,12 @@ def validate_user(e):
     else:
         return build_response(400,'Invalid credentials')
 
+def get_post(e):
+    raise NotImplementedError
+
+def create_post(e):
+    raise NotImplementedError
+
 
 def build_response(status_code, body):
     return {
@@ -118,6 +129,6 @@ def build_response(status_code, body):
 
 
 #print(lambda_handler(post_user_event,None))
-#print(lambda_handler(get_user_event,None))
+print(lambda_handler(get_user_event,None))
 #print(lambda_handler(validate_user_event_bad,None))
 #print(lambda_handler(validate_user_event_good,None))
