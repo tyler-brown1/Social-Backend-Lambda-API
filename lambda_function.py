@@ -1,4 +1,4 @@
-import os,json,pg8000,datetime,dotenv,hashlib,base64
+import os,json,pg8000,datetime,dotenv,hashlib,base64,pydantic
 from testevents import *
 from dotenv import load_dotenv
 load_dotenv()
@@ -115,7 +115,24 @@ def get_post(e):
     raise NotImplementedError
 
 def create_post(e):
-    raise NotImplementedError
+    BODY = e.get('body')
+    if not BODY:
+        return build_response(400,'No body')
+    
+    user_id = e.get('user_id')
+    content = e.get('content')
+    if None in [user_id, content]:
+        return build_response(400,'Parameter missing')
+    image_url = e.get('image_url')
+
+    if image_url is None:
+        statement = "INSERT INTO users (user_id,content) VALUES(%s,%s)"
+    else:
+        statement = "INSERT INTO users (user_id,content,image_url) VALUES(%s,%s,%s)"
+    
+
+
+
 
 
 def build_response(status_code, body):
@@ -129,6 +146,6 @@ def build_response(status_code, body):
 
 
 #print(lambda_handler(post_user_event,None))
-print(lambda_handler(get_user_event,None))
+#print(lambda_handler(get_user_event,None))
 #print(lambda_handler(validate_user_event_bad,None))
 #print(lambda_handler(validate_user_event_good,None))

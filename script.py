@@ -36,7 +36,8 @@ def create_tables():
         post_id SERIAL PRIMARY KEY,
         user_id INT NOT NULL,
         content TEXT NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        image_url TEXT
     )"""
     follows_create = """
     CREATE TABLE follows(
@@ -49,7 +50,7 @@ def create_tables():
     )
     """
     cursor.execute(users_create)
-    #cursor.execute(posts_create)
+    cursor.execute(posts_create)
     #cursor.execute(follows_create)
     conn.commit()
     print("Created")
