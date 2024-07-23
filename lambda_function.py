@@ -1,4 +1,5 @@
-import os,json,pg8000,datetime,dotenv,hashlib,base64,pydantic
+import os,json,pg8000,datetime,dotenv,hashlib,base64
+import data_validators as valid
 from testevents import *
 from dotenv import load_dotenv
 load_dotenv()
@@ -43,7 +44,7 @@ def lambda_handler(event,context):
             return create_post(event)
         else:
             return build_response(400,(method,path))
-    except Exception as e:
+    except NotImplementedError: #Exception as e:
         return build_response(500,type("e").__name__)
     
     finally:
@@ -51,19 +52,26 @@ def lambda_handler(event,context):
         conn.close()
 
 def create_user(e):
+    ### NEED TO IMPLEMENT CHECK USER IS UNIQUE FIRST
     BODY = e.get('body')
     if not BODY:
         return build_response(400,"No Body")
-    user = BODY.get('username')
-    password = BODY.get('password')
-    if None in [user, password]:
-        return build_response(400,'Missing a body parameter')
+    
+
+    if not valid.create_user(BODY):
+        print("error:",valid.create_user.errors) # remove these later
+        return build_response(400,"Error in body")
+    else:
+        print("no errors")
+    
+    password = BODY['password']
+    username = BODY['username']
     
     salt = os.urandom(16)
     hashed_password = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt, 10000)
     hash = base64.b64encode(salt+hashed_password).decode('utf-8')
     statement = "INSERT INTO users (username,password_hash) VALUES(%s,%s)"
-    cursor.execute(statement,(user,hash))
+    cursor.execute(statement,(username,hash))
     conn.commit()
     
     return build_response(200,'Successfully added!')
@@ -129,11 +137,9 @@ def create_post(e):
         statement = "INSERT INTO users (user_id,content) VALUES(%s,%s)"
     else:
         statement = "INSERT INTO users (user_id,content,image_url) VALUES(%s,%s,%s)"
+
+    # not finished
     
-
-
-
-
 
 def build_response(status_code, body):
     return {
@@ -145,7 +151,7 @@ def build_response(status_code, body):
     }
 
 
-#print(lambda_handler(post_user_event,None))
+print(lambda_handler(post_user_event,None))
 #print(lambda_handler(get_user_event,None))
 #print(lambda_handler(validate_user_event_bad,None))
 #print(lambda_handler(validate_user_event_good,None))

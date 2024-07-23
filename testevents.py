@@ -2,7 +2,7 @@ post_user_event = {
   "httpMethod": "POST",
   "path": "/user",
   "body": {
-    "username": "bob328",
+    "username": "bob329",
     "password": "thisIsMyPassword"
   }
 }
