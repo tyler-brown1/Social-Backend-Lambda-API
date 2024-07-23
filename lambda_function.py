@@ -61,8 +61,6 @@ def create_user(e):
     if not valid.create_user(BODY):
         print("error:",valid.create_user.errors) # remove these later
         return build_response(400,"Error in body")
-    else:
-        print("no errors")
     
     password = BODY['password']
     username = BODY['username']
@@ -80,12 +78,15 @@ def get_user(e):
     QSP = e.get('queryStringParameters')
     if not QSP:
         return build_response(400,"No Query String Parameters")
-    user = QSP.get('username')
-    if not user:
-        return build_response(400,"No user in QSP")
-        
+
+    if not valid.get_user(QSP):
+        print("error:",valid.create_user.errors)
+        return build_response(400,"Error in body")
+    
+    username = QSP.get('username')
+
     statement = "SELECT user_id,username FROM users WHERE username = %s;"
-    cursor.execute(statement,(user,))
+    cursor.execute(statement,(username,))
     res = cursor.fetchone()
     
     if not res:
@@ -151,7 +152,7 @@ def build_response(status_code, body):
     }
 
 
-print(lambda_handler(post_user_event,None))
-#print(lambda_handler(get_user_event,None))
+#print(lambda_handler(post_user_event,None))
+print(lambda_handler(get_user_event,None))
 #print(lambda_handler(validate_user_event_bad,None))
 #print(lambda_handler(validate_user_event_good,None))
