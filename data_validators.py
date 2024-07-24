@@ -21,4 +21,8 @@ create_post = Validator({
 get_post = Validator({
     'post_id':{'type':'integer','required':True}
 })
+follow = Validator({
+    'follower_id':{'type':'integer'},
+    'followee_id':{'type':'integer'}
+})
 

@@ -41,7 +41,7 @@ create_post_event = {
   "httpMethod": "POST",
   "path": "/post",
   "body": {
-    "user_id": 1,
+    "user_id": 100,
     "content": "Second post"
   }
 }
@@ -50,6 +50,15 @@ get_post_event = {
   "httpMethod": "GET",
   "path": "/post",
   "queryStringParameters": {
-    "post_id": 1
+    "post_id": 3
+  }
+}
+
+follow_event = {
+  "httpMethod": "POST",
+  "path": "/follow",
+  "body": {
+    "follower_id": 1,
+    "followee_id": 50
   }
 }

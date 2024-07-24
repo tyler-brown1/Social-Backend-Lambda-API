@@ -18,6 +18,7 @@ db_port = os.environ['DB_PORT']
 user_path = "/user"
 user_auth = "/user/auth"
 post_path = '/post'
+follow_path = '/follow'
 
 
 conn = pg8000.connect(
@@ -46,9 +47,12 @@ def lambda_handler(event,context):
             return get_post(event)
         elif path == post_path and method == 'POST':
             return create_post(event)
+        elif path == follow_path and method == 'POST':
+            return follow(event)
         else:
-            return build_response(400,(method,path))
-    except NotImplementedError: #Exception as e:
+            return build_response(400,"Not implemented for this endpoint")
+        
+    except NotImplementedError: #This is just so I see the actual errors while developing. Exception as e:
         return build_response(500,type("e").__name__)
     
     finally:
@@ -70,7 +74,7 @@ def create_user(e):
     statement = 'SELECT * FROM users WHERE username = %s'
     cursor.execute(statement,(username,))
     check = cursor.fetchone()
-    if len(check) != 0:
+    if check:
         return build_response(400,"Username is taken")
 
     salt = os.urandom(16)
@@ -97,7 +101,7 @@ def get_user(e):
     cursor.execute(statement,(username,))
     res = cursor.fetchone()
     
-    if not res:
+    if res is None:
         return build_response(404,"User does not exist")
 
     obj = {'username': username, 'user_id': res[0]}
@@ -148,7 +152,7 @@ def get_post(e):
     statement = "SELECT users.user_id,username,content FROM posts JOIN users ON posts.user_id = users.user_id WHERE post_id = %s"
     cursor.execute(statement,(post_id,))
     res = cursor.fetchone()
-    if len(res) == 0:
+    if res is None:
         return build_response(404,'Post not found')
     # get comments later
     obj = {'poster_id': res[0],'poster_name': res[1], 'content': res[2], 'comments': ['not implemented']}
@@ -168,17 +172,43 @@ def create_post(e):
     content = BODY['content']
 
     # check that user exists
-    statement = "SELECT * FROM users WHERE user_id = %s"
-    cursor.execute(statement, (user_id,))
-    check = cursor.fetchone()
-    if len(check) == 0:
-        return build_response(400,"User_id does not exist")
+    if not user_exists(user_id):
+        return build_response(400,"Poster does not exist")
     
     statement = "INSERT INTO posts (user_id,content) VALUES(%s,%s)"
     cursor.execute(statement,(user_id,content))
     conn.commit()
 
     return build_response(200,"Created post")
+
+
+def follow(e):
+    BODY = e.get('body')
+    if not BODY:
+        return build_response(400,"No body")
+    
+    if not valid.follow.validate(BODY):
+        return build_response(400,"Missing parameter")
+    
+    follower_id = BODY['follower_id']
+    followee_id = BODY['followee_id']
+
+    if not user_exists(followee_id) or not user_exists(follower_id):
+        return build_response(400,'One user does not exist')
+
+    return build_response(200,"Good so far")
+
+# see if user exists
+def user_exists(user_id):
+    statement = "SELECT username FROM users WHERE user_id = %s"
+    cursor.execute(statement,(user_id,))
+    check = cursor.fetchone()
+    if check is None:
+        return False
+    else:
+        return True
+
+# post_exists function also implement
 
 def build_response(status_code, body):
     return {
@@ -190,9 +220,12 @@ def build_response(status_code, body):
     }
 
 
+
+
 #print(lambda_handler(create_user_event,None))
-#print(lambda_handler(create_user_event,None))
+#print(lambda_handler(get_user_event,None))
 #print(lambda_handler(validate_user_event_bad,None))
 #print(lambda_handler(validate_user_event_good,None))
 #print(lambda_handler(create_post_event,None))
-print(lambda_handler(get_post_event,None))
+#print(lambda_handler(get_post_event,None))
+#print(lambda_handler(follow_event,None))

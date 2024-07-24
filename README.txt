@@ -30,18 +30,24 @@ Work in Progress :)
     - Get a post's details and comments
     ** 'post_id':{'type':'int','required':True}
 
-    POST /post {userid,content}
+    POST /post {user_id,content}
     - Create a new post
-    ** 'content':{'type':'string','required':True, 'minlength': '3', 'maxlength': '300'},
+    ** 'content':{'type':'string','required':True, 'minlength': 3, 'maxlength': 300},
     ** 'userid':{'type':'integer','required':True}
 
 
 /follow
-    follow a person
-    not implemented
+    POST /follow {follower_id, followee_id}
+    - Follow a user
+    ** 'follower_id':{'type':'integer'},
+    ** 'followee_id':{'type':'integer'}
 
 /like
     like a post
+    not implemented
+
+/comment
+    comment on a post
     not implemented
 
 /feed
