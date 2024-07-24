@@ -32,24 +32,36 @@ def create_tables():
     CREATE TABLE posts(
         post_id SERIAL PRIMARY KEY,
         user_id INT NOT NULL,
-        content TEXT NOT NULL,
+        content VARCHAR(300) NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE SET NULL,
-        image_url TEXT
+        FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE SET NULL
     )"""
     follows_create = """
     CREATE TABLE follows(
         follower_id INT NOT NULL,
         followee_id INT NOT NULL,
+        email VARCHAR(64),
         followed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY (follower_id, followee_id),
         FOREIGN KEY (follower_id) REFERENCES users(user_id) ON DELETE CASCADE,
         FOREIGN KEY (followee_id) REFERENCES users(user_id) ON DELETE CASCADE
     )
     """
+    comments_create = """
+    CREATE TABLE comments(
+        comment_id SERIAL PRIMARY KEY,
+        post_id INT NOT NULL,
+        user_id INT NOT NULL,
+        content VARCHAR(300) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE SET NULL,
+        FOREIGN KEY (post_id) REFERENCES posts (post_id) ON DELETE CASCADE
+    )
+    """
     cursor.execute(users_create)
     cursor.execute(posts_create)
     cursor.execute(follows_create)
+    cursor.execute(comments_create)
     conn.commit()
     print("Created")
 
@@ -58,7 +70,9 @@ def delete_tables():
     users_delete = "DELETE FROM users"
     posts_delete = "DELETE FROM posts"
     follows_delete = "DELETE FROM follows"
+    comments_delete = "DELETE FROM comments"
 
+    cursor.execute(comments_delete)
     cursor.execute(users_delete)
     cursor.execute(posts_delete)
     cursor.execute(follows_delete)
@@ -69,7 +83,9 @@ def drop_tables():
     users_drop = "DROP TABLE users"
     posts_drop = "DROP TABLE posts"
     follows_drop = "DROP TABLE follows"
+    comments_drop = "DROP TABLE comments"
 
+    cursor.execute(comments_drop)
     cursor.execute(follows_drop)
     cursor.execute(posts_drop)
     cursor.execute(users_drop)
@@ -78,9 +94,9 @@ def drop_tables():
 
 def populate_users():
     users = []
-    for i in range(100):
+    for i in range(5):
         users.append((f'user{i+1}',"a"))
-    statement = "INSERT INTO users (username,pass_hash) VALUES(%s,%s)"
+    statement = "INSERT INTO users (username,password_hash) VALUES(%s,%s)"
     cursor.executemany(statement,users)
     conn.commit()
     print("Added users")
@@ -99,8 +115,8 @@ def populate_follows():
 
 def populate_posts():
     posts = []
-    for i in range(300):
-        a = random.randint(1,100)
+    for i in range(20):
+        a = random.randint(1,5)
         posts.append((a,f'post #{i+1}'))
     statement = "INSERT INTO posts (user_id,content) VALUES (%s,%s)"
     cursor.executemany(statement,posts)
@@ -109,6 +125,8 @@ def populate_posts():
 
 drop_tables()
 create_tables()
+populate_users()
+populate_posts()
 
 cursor.close()
 conn.close()
