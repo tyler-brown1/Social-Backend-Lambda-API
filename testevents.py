@@ -56,9 +56,9 @@ get_post_event = {
 
 follow_event = {
   "httpMethod": "POST",
-  "path": "/follow",
+  "path": "/relationships/follow",
   "body": {
-    "follower_id": 1,
-    "followee_id": 50
+    "follower_id": 3,
+    "followee_id": 5
   }
 }

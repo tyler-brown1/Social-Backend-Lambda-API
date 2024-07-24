@@ -18,7 +18,8 @@ db_port = os.environ['DB_PORT']
 user_path = "/user"
 user_auth = "/user/auth"
 post_path = '/post'
-follow_path = '/follow'
+follow_path = '/relationships/follow'
+unfollow_path = '/relationships/unfollow'
 
 
 conn = pg8000.connect(
@@ -77,9 +78,11 @@ def create_user(e):
     if check:
         return build_response(400,"Username is taken")
 
+    # Encode password by creating salt
     salt = os.urandom(16)
     hashed_password = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt, 10000)
     hash = base64.b64encode(salt+hashed_password).decode('utf-8')
+
     statement = "INSERT INTO users (username,password_hash) VALUES(%s,%s)"
     cursor.execute(statement,(username,hash))
     conn.commit()
@@ -208,7 +211,13 @@ def user_exists(user_id):
     else:
         return True
 
-# post_exists function also implement
+# see if post exists
+def post_exists(post_id):
+    pass
+
+def follow_exists(follower_id,folowee_id):
+    pass
+
 
 def build_response(status_code, body):
     return {

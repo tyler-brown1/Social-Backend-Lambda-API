@@ -23,7 +23,7 @@ Work in Progress :)
     PATCH /user/email {email}
     -not implemented 
 
-    want to implement: get following list , get followers list
+    want to implement: get following list , get followers list. These could input a user_id to join on follows
 
 /post:
     GET /post?id=postid -> {poster_name, poster_id, content, comments:[userid,username,content] }
@@ -36,11 +36,14 @@ Work in Progress :)
     ** 'userid':{'type':'integer','required':True}
 
 
-/follow
-    POST /follow {follower_id, followee_id}
-    - Follow a user
-    ** 'follower_id':{'type':'integer'},
-    ** 'followee_id':{'type':'integer'}
+/relationships
+    /follow
+        POST relationships/follow {follower_id, followee_id}
+        - Follow a user
+        ** 'follower_id':{'type':'integer'},
+        ** 'followee_id':{'type':'integer'}
+    /unfollow
+        same ...
 
 /like
     like a post
