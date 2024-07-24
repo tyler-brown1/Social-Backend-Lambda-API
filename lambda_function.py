@@ -52,11 +52,9 @@ def lambda_handler(event,context):
         conn.close()
 
 def create_user(e):
-    ### NEED TO IMPLEMENT CHECK USER IS UNIQUE FIRST
     BODY = e.get('body')
     if not BODY:
         return build_response(400,"No Body")
-    
 
     if not valid.create_user(BODY):
         print("error:",valid.create_user.errors) # remove these later
@@ -65,6 +63,12 @@ def create_user(e):
     password = BODY['password']
     username = BODY['username']
     
+    statement = 'SELECT * FROM users WHERE username = %s'
+    cursor.execute(statement,(username,))
+    check = cursor.fetchone()
+    if len(check) != 0:
+        return build_response(400,"Username is taken")
+
     salt = os.urandom(16)
     hashed_password = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt, 10000)
     hash = base64.b64encode(salt+hashed_password).decode('utf-8')
@@ -80,43 +84,49 @@ def get_user(e):
         return build_response(400,"No Query String Parameters")
 
     if not valid.get_user(QSP):
-        print("error:",valid.create_user.errors)
+        print("error:",valid.get_user.errors)
         return build_response(400,"Error in body")
     
-    username = QSP.get('username')
+    username = QSP.get('user')
 
     statement = "SELECT user_id,username FROM users WHERE username = %s;"
     cursor.execute(statement,(username,))
     res = cursor.fetchone()
     
     if not res:
-        return build_response(400,"User does not exist")
+        return build_response(404,"User does not exist")
 
-    return build_response(200,res)
+    obj = {'username': cursor[0], 'user_id': cursor[1]}
+    return build_response(200,obj)
 
 def validate_user(e):
     BODY = e.get('body')
     if not BODY:
-        return build_response(400,"No body")
-    user = BODY.get('username')
-    guess = BODY.get('input')
-    if None in [user,guess]:
-        return build_response(400,"Invalid Body Parameters")
+        return build_response(400,"No Body")
+
+    if not valid.validate_user(BODY):
+        print("error:",valid.validate_user.errors)
+        return build_response(400,"Error in body")
+
+    user = BODY['username']
+    guess = BODY['guess']
     
-    get_user_statement = 'SELECT password_hash FROM USERS WHERE username = %s'
+    # check that user exists
+    get_user_statement = 'SELECT password_hash,user_id FROM users WHERE username = %s'
     cursor.execute(get_user_statement,(user,))
     found = cursor.fetchone()
     if not found:
-        print('user not found')
         return build_response(400,'Invalid credentials')
 
+    # check password
     stored_hash = found[0]
     storedb64 = base64.b64decode(stored_hash)
     salt,stored_password_hash = storedb64[:16],storedb64[16:]
     hashed_password = hashlib.pbkdf2_hmac('sha256', guess.encode('utf-8'), salt, 10000)  # hash input
 
     if hashed_password == stored_password_hash:
-        return build_response(200,'Correct credentials')
+        obj = {'user_id': found[1]}
+        return build_response(200,obj)
     else:
         return build_response(400,'Invalid credentials')
 
@@ -128,18 +138,22 @@ def create_post(e):
     if not BODY:
         return build_response(400,'No body')
     
-    user_id = e.get('user_id')
-    content = e.get('content')
-    if None in [user_id, content]:
-        return build_response(400,'Parameter missing')
-    image_url = e.get('image_url')
+    if not valid.create_post(BODY):
+        print("error:",valid.create_post.errors)
+        return build_response(400,"Error in body")
 
-    if image_url is None:
-        statement = "INSERT INTO users (user_id,content) VALUES(%s,%s)"
-    else:
-        statement = "INSERT INTO users (user_id,content,image_url) VALUES(%s,%s,%s)"
+    user_id = BODY['user_id']
+    content = BODY['content']
 
-    # not finished
+    # check that user exists
+    statement = "SELECT * FROM users WHERE user_id = %s"
+    cursor.execute(statement, (user_id,))
+    check = cursor.fetchone()
+    if len(check) == 0:
+        return build_response(400,"User_id does not exist")
+    
+    statement = "INSERT INTO users (user_id,content) VALUES(%s,%s)"
+    return build_response(200, "So far so good")
     
 
 def build_response(status_code, body):
@@ -152,7 +166,8 @@ def build_response(status_code, body):
     }
 
 
-#print(lambda_handler(post_user_event,None))
-print(lambda_handler(get_user_event,None))
+#print(lambda_handler(create_user_event,None))
+#print(lambda_handler(create_user_event,None))
 #print(lambda_handler(validate_user_event_bad,None))
 #print(lambda_handler(validate_user_event_good,None))
+#print(lambda_handler(create_post_event,None))

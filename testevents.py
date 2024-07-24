@@ -1,4 +1,4 @@
-post_user_event = {
+create_user_event = {
   "httpMethod": "POST",
   "path": "/user",
   "body": {
@@ -11,7 +11,7 @@ get_user_event = {
   "httpMethod": "GET",
   "path": "/user",
   "queryStringParameters": {
-    "username": "bob334",
+    "user": "bob334",
   }
 }
 
@@ -19,8 +19,8 @@ validate_user_event_bad = {
   "httpMethod": "GET",
   "path": "/user/auth",
   "body": {
-    "username": "bob326",
-    "input": "thisIsNotMyPassword"
+    "username": "bob334",
+    "guess": "thisIsNotMyPassword"
   }
 }
 
@@ -28,7 +28,16 @@ validate_user_event_good = {
   "httpMethod": "GET",
   "path": "/user/auth",
   "body": {
-    "username": "bob327",
-    "input": "thisIsMyPassword"
+    "username": "bob334",
+    "guess": "thisIsMyPassword"
+  }
+}
+
+create_post_event = {
+  "httpMethod": "POST",
+  "path": "/post",
+  "body": {
+    "user_id": 1,
+    "content": "First post"
   }
 }
