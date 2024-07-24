@@ -1,3 +1,7 @@
+"""
+Mock Event objects to test
+"""
+
 create_user_event = {
   "httpMethod": "POST",
   "path": "/user",

@@ -3,10 +3,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 """
-password = "12345"
-salt = bcrypt.gensalt()
-hash = bcrypt.hashpw(password.encode('utf-8'), salt)
-print(bcrypt.checkpw(password.encode('utf-8'),hash))
+Some Scripts if I want to drop/populate/update schema in tables
 """
 
 db_host = os.environ['DB_HOST']
@@ -73,7 +70,7 @@ def drop_tables():
     follows_drop = "DROP TABLE follows"
 
     #cursor.execute(follows_drop)
-    #cursor.execute(posts_drop)
+    cursor.execute(posts_drop)
     cursor.execute(users_drop)
     conn.commit()
     print("Dropped tables")

@@ -4,6 +4,10 @@ from testevents import *
 from dotenv import load_dotenv
 load_dotenv()
 
+"""
+Main API code for all endpoints, may split into more files at some point
+"""
+
 db_host = os.environ['DB_HOST']
 db_name = os.environ['DB_NAME']
 db_user = os.environ['DB_USER']
