@@ -1,8 +1,10 @@
 API DOCUMENTATION
+Lambda code for a backend personal project for a "Twitter Clone" 
+Work in Progress :)
 =================
 
 /user:
-    GET /user?user=username -> {user_id, username, follower_ct, following_ct <- follows not implemented}
+    GET /user?user=username -> {user_id, username, email, follower_ct, following_ct <- follows/email not implemented}
     - Get a users information
     ** 'user':{'type':'string','required':True}
 
@@ -18,6 +20,9 @@ API DOCUMENTATION
         ** 'username':{'type':'string','required':True},
         ** 'guess' :{'type':'string','required':True}
     
+    PATCH /user/email {email}
+    -not implemented 
+
     want to implement: get following list , get followers list
 
 /post:
@@ -29,3 +34,23 @@ API DOCUMENTATION
     - Create a new post
     ** 'content':{'type':'string','required':True, 'minlength': '3', 'maxlength': '300'},
     ** 'userid':{'type':'integer','required':True}
+
+
+/follow
+    follow a person
+    not implemented
+
+/like
+    like a post
+    not implemented
+
+/feed
+    GET /feed/new?user=user_id&limit=limit -> [posts]
+    - Gets new posts by accounts they follow
+    - not implemented
+
+    GET /feed/top?within=time&limit=limit -> [posts]
+    - Gets new posts by top within a time
+    - not implemented
+    
+
