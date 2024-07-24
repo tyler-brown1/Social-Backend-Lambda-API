@@ -18,26 +18,44 @@ Work in Progress :)
 
         POST /auth {username,password} -> {user_id if valid}
         - See if password is correct for a user
-        ** 'username':{'type':'string','required':True},
-        ** 'guess' :{'type':'string','required':True}
+        ** 'username':{'type':'string','required':True}, 
+           'guess' :{'type':'string','required':True}**
     
     PATCH /user/email {email}
     -not implemented 
 
     DELETE /user {user_id}
+    -not implemented
 
-    want to implement: get following list , get followers list. These could input a user_id to join on follows
+    want to implement: 
+    get following list , get followers list. These could input a user_id to join on follows
 
 /post:
 
-    GET /post?id=postid -> {poster_name, poster_id, content, comments:[userid,username,content] }
+    GET /post?id=postid -> {poster_name, poster_id, content}
     - Get a post's details and comments
-    ** 'post_id':{'type':'int','required':True}
+    ** 'post_id':{'type':'int string','required':True}
 
     POST /post {user_id,content} -> {post_id if valid}
     - Create a new post
     ** 'content':{'type':'string','required':True, 'minlength': 3, 'maxlength': 300},
-    ** 'userid':{'type':'integer','required':True}
+    ** 'userid':{'type':'string','required':True}
+
+    /comments
+
+        GET /post/comment?id=postid&start=start&limit=limit
+        - Get comments from a post
+        ** 'post_id':{'type':'str_int','required':True}
+        ** 'start':{'type':'str_int','required':True}
+        ** 'limit':{'type':'str_int','required':True}
+
+        POST /post/comment {user_id,post_id,content}
+        - Comment on a post
+        ** 'post_id':{'type':'integer','required':True}
+        ** 'post_id':{'type':'integer','required':True}
+        ** 'content':{'type':'string','required':True, 'minlength': 3, 'maxlength': 300}
+
+
 
 
 /relationships
