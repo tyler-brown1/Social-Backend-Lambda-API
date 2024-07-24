@@ -7,7 +7,6 @@ Work in Progress :)
     GET /user?user=username -> {user_id, username, email, follower_ct, following_ct <- follows/email not implemented}
     - Get a users information
     ** 'user':{'type':'string','required':True}
-
     
     POST /user {username,password} -> (user_id) ** IMPLEMENT
     - Create a new user
@@ -32,7 +31,7 @@ Work in Progress :)
     - Get a post's details and comments
     ** 'post_id':{'type':'int','required':True}
 
-    POST /post {user_id,content}
+    POST /post {user_id,content} -> {post_id if valid}
     - Create a new post
     ** 'content':{'type':'string','required':True, 'minlength': 3, 'maxlength': 300},
     ** 'userid':{'type':'integer','required':True}
@@ -45,17 +44,21 @@ Work in Progress :)
         ** 'follower_id':{'type':'integer'},
         ** 'followee_id':{'type':'integer'}
     /unfollow
-        same ...
+        ** 'unfollower_id':{'type':'integer'},
+        ** 'unfollowee_id':{'type':'integer'}
 
 /like
+
     like a post
     not implemented
 
 /comment
+
     comment on a post
     not implemented
 
 /feed
+
     GET /feed/new?user=user_id&limit=limit -> [posts]
     - Gets new posts by accounts they follow
     - not implemented

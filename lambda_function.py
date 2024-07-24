@@ -1,4 +1,4 @@
-import os,json,pg8000,datetime,dotenv,hashlib,base64
+import os,json,pg8000,datetime,dotenv,hashlib,base64,time
 import data_validators as valid
 from testevents import *
 from dotenv import load_dotenv
@@ -31,6 +31,17 @@ conn = pg8000.connect(
 )
 cursor = conn.cursor()
 
+def timer_wrapper(func):
+    def wrapper(*args, **kwargs):
+        start_time = time.time()  # Record start time
+        result = func(*args, **kwargs)  # Call the original function
+        end_time = time.time()  # Record end time
+        elapsed_time = end_time - start_time  # Calculate elapsed time
+        print(f"Function {func.__name__} took {elapsed_time:.4f} seconds to execute.")
+        return result
+    return wrapper
+
+@timer_wrapper
 def lambda_handler(event,context):
     
     method = event.get('httpMethod')
@@ -50,11 +61,13 @@ def lambda_handler(event,context):
             return create_post(event)
         elif path == follow_path and method == 'POST':
             return follow(event)
+        elif path == unfollow_path and method == 'POST':
+            return unfollow(event)
         else:
-            return build_response(400,"Not implemented for this endpoint")
+            return build_response(400,{"msg":"Not implemented for this endpoint"})
         
     except NotImplementedError: #This is just so I see the actual errors while developing. Exception as e:
-        return build_response(500,type("e").__name__)
+        return build_response(500,{"msg": type("e").__name__})
     
     finally:
         cursor.close()
@@ -63,11 +76,11 @@ def lambda_handler(event,context):
 def create_user(e):
     BODY = e.get('body')
     if not BODY:
-        return build_response(400,"No Body")
+        return build_response(400,{"msg": "No body"})
 
     if not valid.create_user(BODY):
         print("error:",valid.create_user.errors) # remove these later
-        return build_response(400,"Error in body")
+        return build_response(400,{"msg": "Error in body"})
     
     password = BODY['password']
     username = BODY['username']
@@ -76,27 +89,28 @@ def create_user(e):
     cursor.execute(statement,(username,))
     check = cursor.fetchone()
     if check:
-        return build_response(400,"Username is taken")
+        return build_response(400,{"msg": "Username is taken"})
 
     # Encode password by creating salt
     salt = os.urandom(16)
     hashed_password = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt, 10000)
     hash = base64.b64encode(salt+hashed_password).decode('utf-8')
 
-    statement = "INSERT INTO users (username,password_hash) VALUES(%s,%s)"
+    statement = "INSERT INTO users (username,password_hash) VALUES(%s,%s) RETURNING user_id"
     cursor.execute(statement,(username,hash))
     conn.commit()
+    new_id = cursor.fetchone()[0]
     
-    return build_response(200,'Successfully added!')
+    return build_response(200,{"msg": "Sucessfully added","new_user_id":new_id})
 
 def get_user(e):
     QSP = e.get('queryStringParameters')
     if not QSP:
-        return build_response(400,"No Query String Parameters")
+        return build_response(400,{"msg": "No QSP"})
 
     if not valid.get_user(QSP):
         print("error:",valid.get_user.errors)
-        return build_response(400,"Error in body")
+        return build_response(400,{"msg": "Error in QSP"})
     
     username = QSP.get('user')
 
@@ -105,19 +119,19 @@ def get_user(e):
     res = cursor.fetchone()
     
     if res is None:
-        return build_response(404,"User does not exist")
+        return build_response(404,{"msg": "User does not exist"})
 
-    obj = {'username': username, 'user_id': res[0]}
+    obj = {'username': username, 'user_id': res[0], 'msg': "Success"}
     return build_response(200,obj)
 
 def validate_user(e):
     BODY = e.get('body')
     if not BODY:
-        return build_response(400,"No Body")
+        return build_response(400,{"msg": "No body"})
 
     if not valid.validate_user(BODY):
         print("error:",valid.validate_user.errors)
-        return build_response(400,"Error in body")
+        return build_response(400,{"msg": "Error in body"})
 
     user = BODY['username']
     guess = BODY['guess']
@@ -127,7 +141,7 @@ def validate_user(e):
     cursor.execute(get_user_statement,(user,))
     found = cursor.fetchone()
     if not found:
-        return build_response(400,'Invalid credentials')
+        return build_response(400,{"msg": "Invalid credentials"})
 
     # check password
     stored_hash = found[0]
@@ -136,19 +150,19 @@ def validate_user(e):
     hashed_password = hashlib.pbkdf2_hmac('sha256', guess.encode('utf-8'), salt, 10000)  # hash input
 
     if hashed_password == stored_password_hash:
-        obj = {'user_id': found[1]}
+        obj = {'user_id': found[1],'message': "Success"}
         return build_response(200,obj)
     else:
-        return build_response(400,'Invalid credentials')
+        return build_response(400,{"msg": "Invalid Credentials"})
 
 def get_post(e):
     QSP = e.get('queryStringParameters')
     if not QSP:
-        return build_response(400, 'No Query Strings')
+        return build_response(400,{"msg": "No QSP"})
 
     if not valid.get_post(QSP):
         print("error:",valid.get_post.errors)
-        return build_response(400,"Error in QSP")
+        return build_response(400,{"msg": "Error in QSP"})
     
     post_id = QSP['post_id']
 
@@ -156,50 +170,81 @@ def get_post(e):
     cursor.execute(statement,(post_id,))
     res = cursor.fetchone()
     if res is None:
-        return build_response(404,'Post not found')
+        return build_response(404,{'msg':'Post not found'})
     # get comments later
-    obj = {'poster_id': res[0],'poster_name': res[1], 'content': res[2], 'comments': ['not implemented']}
-    return build_response(obj,obj)
+    obj = {'message':'Success','poster_id': res[0],'poster_name': res[1], 'content': res[2], 'comments': ['not implemented']}
+    return build_response(200,obj)
 
 
 def create_post(e):
     BODY = e.get('body')
     if not BODY:
-        return build_response(400,'No body')
+        return build_response(400,{"msg": "No body"})
     
     if not valid.create_post(BODY):
         print("error:",valid.create_post.errors)
-        return build_response(400,"Error in body")
+        return build_response(400,{"msg": "Error in body"})
 
     user_id = BODY['user_id']
     content = BODY['content']
 
     # check that user exists
     if not user_exists(user_id):
-        return build_response(400,"Poster does not exist")
+        return build_response(400,{"msg": "Poster does not exist"})
     
-    statement = "INSERT INTO posts (user_id,content) VALUES(%s,%s)"
+    statement = "INSERT INTO posts (user_id,content) VALUES(%s,%s) RETURNING post_id"
     cursor.execute(statement,(user_id,content))
     conn.commit()
+    new_id = cursor.fetchone()[0]
 
-    return build_response(200,"Created post")
+    return build_response(200,{"msg": "Created post","post_id": new_id})
 
 
 def follow(e):
     BODY = e.get('body')
     if not BODY:
-        return build_response(400,"No body")
+        return build_response(400,{"msg": "No body"})
     
     if not valid.follow.validate(BODY):
-        return build_response(400,"Missing parameter")
+        print(valid.follow.errors)
+        return build_response(400,{"msg": "Error in body"})
     
     follower_id = BODY['follower_id']
     followee_id = BODY['followee_id']
 
-    if not user_exists(followee_id) or not user_exists(follower_id):
-        return build_response(400,'One user does not exist')
+    if follow_exists(follower_id,followee_id):
+        return build_response(400,{"msg": "Relationship already exists"})
 
-    return build_response(200,"Good so far")
+    if not user_exists(followee_id) or not user_exists(follower_id):
+        return build_response(400,{"msg": "One user does not exist"})
+
+    statement = "INSERT INTO follows (follower_id,followee_id) VALUES(%s,%s)"
+    cursor.execute(statement,(follower_id,followee_id))
+    conn.commit()
+    return build_response(200,{'msg':'Success'})
+
+def unfollow(e):
+    BODY = e.get('body')
+    if not BODY:
+        return build_response(400,{"msg": "No body"})
+    
+    if not valid.unfollow.validate(BODY):
+        print(valid.unfollow.errors)
+        return build_response(400,{"msg": "Error in body"})
+    
+    unfollower_id = BODY['unfollower_id']
+    unfollowee_id = BODY['unfollowee_id']
+
+    if not follow_exists(unfollower_id,unfollowee_id):
+        return build_response(400,{"msg": "Relationship doesn't exists"})
+
+    if not user_exists(unfollowee_id) or not user_exists(unfollower_id):
+        return build_response(400,{"msg": "One user does not exist"})
+    
+    statement = "DELETE FROM follows WHERE follower_id = %s AND followee_id = %s"
+    cursor.execute(statement,(unfollower_id,unfollowee_id))
+    conn.commit()
+    return build_response(200,{'msg':'Success'})
 
 # see if user exists
 def user_exists(user_id):
@@ -215,8 +260,17 @@ def user_exists(user_id):
 def post_exists(post_id):
     pass
 
-def follow_exists(follower_id,folowee_id):
-    pass
+# see if follow exists
+def follow_exists(follower_id,followee_id):
+    statement = "SELECT * FROM follows WHERE follower_id = %s AND followee_id = %s"
+    cursor.execute(statement,(follower_id,followee_id))
+
+    res = cursor.fetchone()
+    if res is None:
+        return False
+    else:
+        return True
+
 
 
 def build_response(status_code, body):
@@ -230,7 +284,6 @@ def build_response(status_code, body):
 
 
 
-
 #print(lambda_handler(create_user_event,None))
 #print(lambda_handler(get_user_event,None))
 #print(lambda_handler(validate_user_event_bad,None))
@@ -238,3 +291,5 @@ def build_response(status_code, body):
 #print(lambda_handler(create_post_event,None))
 #print(lambda_handler(get_post_event,None))
 #print(lambda_handler(follow_event,None))
+print(lambda_handler(unfollow_event,None))
+

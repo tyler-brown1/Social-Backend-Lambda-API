@@ -6,7 +6,7 @@ create_user_event = {
   "httpMethod": "POST",
   "path": "/user",
   "body": {
-    "username": "bob334",
+    "username": "bob3",
     "password": "thisIsMyPassword"
   }
 }
@@ -41,8 +41,8 @@ create_post_event = {
   "httpMethod": "POST",
   "path": "/post",
   "body": {
-    "user_id": 100,
-    "content": "Second post"
+    "user_id": 1,
+    "content": "First post"
   }
 }
 
@@ -50,7 +50,7 @@ get_post_event = {
   "httpMethod": "GET",
   "path": "/post",
   "queryStringParameters": {
-    "post_id": 3
+    "post_id": 1
   }
 }
 
@@ -58,7 +58,16 @@ follow_event = {
   "httpMethod": "POST",
   "path": "/relationships/follow",
   "body": {
-    "follower_id": 3,
-    "followee_id": 5
+    "follower_id": 1,
+    "followee_id": 3
+  }
+}
+
+unfollow_event = {
+  "httpMethod": "POST",
+  "path": "/relationships/unfollow",
+  "body": {
+    "unfollower_id": 1,
+    "unfollowee_id": 3
   }
 }

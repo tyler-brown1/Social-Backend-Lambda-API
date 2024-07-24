@@ -49,7 +49,7 @@ def create_tables():
     """
     cursor.execute(users_create)
     cursor.execute(posts_create)
-    #cursor.execute(follows_create)
+    cursor.execute(follows_create)
     conn.commit()
     print("Created")
 
@@ -70,7 +70,7 @@ def drop_tables():
     posts_drop = "DROP TABLE posts"
     follows_drop = "DROP TABLE follows"
 
-    #cursor.execute(follows_drop)
+    cursor.execute(follows_drop)
     cursor.execute(posts_drop)
     cursor.execute(users_drop)
     conn.commit()

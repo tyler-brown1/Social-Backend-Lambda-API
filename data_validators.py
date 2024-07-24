@@ -25,4 +25,8 @@ follow = Validator({
     'follower_id':{'type':'integer'},
     'followee_id':{'type':'integer'}
 })
+unfollow = Validator({
+    'unfollower_id':{'type':'integer'},
+    'unfollowee_id':{'type':'integer'}
+})
 
