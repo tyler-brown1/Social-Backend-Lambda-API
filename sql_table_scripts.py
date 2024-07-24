@@ -34,6 +34,7 @@ def create_tables():
         user_id INT NOT NULL,
         content TEXT NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE SET NULL,
         image_url TEXT
     )"""
     follows_create = """
@@ -42,8 +43,8 @@ def create_tables():
         followee_id INT NOT NULL,
         followed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY (follower_id, followee_id),
-        FOREIGN KEY (follower_id) REFERENCES users(user_id),
-        FOREIGN KEY (followee_id) REFERENCES users(user_id)
+        FOREIGN KEY (follower_id) REFERENCES users(user_id) ON DELETE CASCADE,
+        FOREIGN KEY (followee_id) REFERENCES users(user_id) ON DELETE CASCADE
     )
     """
     cursor.execute(users_create)

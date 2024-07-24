@@ -9,7 +9,7 @@ Work in Progress :)
     ** 'user':{'type':'string','required':True}
 
     
-    POST /user {username,password}
+    POST /user {username,password} -> (user_id) ** IMPLEMENT
     - Create a new user
     ** 'username':{'type':'string','minlength':4,'maxlength':12,'required':True},
     ** 'password':{'type':'string','minlength':5,'maxlength':18,'required':True}
@@ -22,6 +22,8 @@ Work in Progress :)
     
     PATCH /user/email {email}
     -not implemented 
+
+    DELETE /user {user_id}
 
     want to implement: get following list , get followers list. These could input a user_id to join on follows
 
