@@ -50,7 +50,7 @@ get_post_event = {
   "httpMethod": "GET",
   "path": "/post",
   "queryStringParameters": {
-    "post_id": 1
+    "post_id": "1"
   }
 }
 
@@ -69,5 +69,25 @@ unfollow_event = {
   "body": {
     "unfollower_id": 1,
     "unfollowee_id": 3
+  }
+}
+
+post_comment_event = {
+  "httpMethod": "POST",
+  "path": "/post/comment",
+  "body": {
+    "post_id": 1,
+    "user_id": 3,
+    "content": "First comment"
+  }
+}
+
+get_comments_event = {
+  "httpMethod": "GET",
+  "path": "/post/comment",
+  "queryStringParameters": {
+    "post_id": "1",
+    "limit": "20",
+    "offset": "0"
   }
 }

@@ -20,6 +20,7 @@ user_auth = "/user/auth"
 post_path = '/post'
 follow_path = '/relationships/follow'
 unfollow_path = '/relationships/unfollow'
+comment_path = '/post/comment'
 
 
 conn = pg8000.connect(
@@ -33,22 +34,22 @@ cursor = conn.cursor()
 
 def timer_wrapper(func):
     def wrapper(*args, **kwargs):
-        start_time = time.time()  # Record start time
-        result = func(*args, **kwargs)  # Call the original function
-        end_time = time.time()  # Record end time
-        elapsed_time = end_time - start_time  # Calculate elapsed time
-        print(f"Function {func.__name__} took {elapsed_time:.4f} seconds to execute.")
+        start_time = time.time()
+        result = func(*args, **kwargs)
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        print(f"Took {elapsed_time:.4f} seconds to execute.")
         return result
     return wrapper
 
-@timer_wrapper
+@timer_wrapper # will remove eventually
 def lambda_handler(event,context):
     
     method = event.get('httpMethod')
     path = event.get('path')
     # Try to implement handlers for each path maybe
 
-    try:
+    try: # clean up sometime
         if path == user_path and method == 'POST':
             return create_user(event)
         elif path == user_path and method == 'GET':
@@ -63,6 +64,10 @@ def lambda_handler(event,context):
             return follow(event)
         elif path == unfollow_path and method == 'POST':
             return unfollow(event)
+        elif path == comment_path and method == 'GET':
+            return get_comments(event)
+        elif path == comment_path and method == 'POST':
+            return post_comment(event)
         else:
             return build_response(400,{"msg":"Not implemented for this endpoint"})
         
@@ -108,20 +113,23 @@ def get_user(e):
     if not QSP:
         return build_response(400,{"msg": "No QSP"})
 
-    if not valid.get_user(QSP):
+    if not valid.get_user.validate(QSP):
         print("error:",valid.get_user.errors)
         return build_response(400,{"msg": "Error in QSP"})
     
     username = QSP.get('user')
 
-    statement = "SELECT user_id FROM users WHERE username = %s;"
+    statement = "SELECT user_id FROM users WHERE username = %s"
+
     cursor.execute(statement,(username,))
     res = cursor.fetchone()
     
     if res is None:
         return build_response(404,{"msg": "User does not exist"})
 
-    obj = {'username': username, 'user_id': res[0], 'msg': "Success"}
+    statement = "I need to look up subqueries"
+
+    obj = {'username': username, 'user_id': res[0], 'followers': 0,'following':0,'msg': "Success"}
     return build_response(200,obj)
 
 def validate_user(e):
@@ -129,7 +137,7 @@ def validate_user(e):
     if not BODY:
         return build_response(400,{"msg": "No body"})
 
-    if not valid.validate_user(BODY):
+    if not valid.validate_user.validate(BODY):
         print("error:",valid.validate_user.errors)
         return build_response(400,{"msg": "Error in body"})
 
@@ -160,19 +168,19 @@ def get_post(e):
     if not QSP:
         return build_response(400,{"msg": "No QSP"})
 
-    if not valid.get_post(QSP):
+    if not valid.get_post.validate(QSP):
         print("error:",valid.get_post.errors)
         return build_response(400,{"msg": "Error in QSP"})
     
-    post_id = QSP['post_id']
+    post_id = int(QSP['post_id'])
 
     statement = "SELECT users.user_id,username,content FROM posts JOIN users ON posts.user_id = users.user_id WHERE post_id = %s"
     cursor.execute(statement,(post_id,))
     res = cursor.fetchone()
     if res is None:
         return build_response(404,{'msg':'Post not found'})
-    # get comments later
-    obj = {'message':'Success','poster_id': res[0],'poster_name': res[1], 'content': res[2], 'comments': ['not implemented']}
+    
+    obj = {'message':'Success','poster_id': res[0],'poster_name': res[1], 'content': res[2]}
     return build_response(200,obj)
 
 
@@ -181,7 +189,7 @@ def create_post(e):
     if not BODY:
         return build_response(400,{"msg": "No body"})
     
-    if not valid.create_post(BODY):
+    if not valid.create_post.validate(BODY):
         print("error:",valid.create_post.errors)
         return build_response(400,{"msg": "Error in body"})
 
@@ -246,6 +254,29 @@ def unfollow(e):
     conn.commit()
     return build_response(200,{'msg':'Success'})
 
+def get_comments(e):
+    QSP = e.get('queryStringParameters')
+    if QSP is None:
+        return build_response(400,{'msg':'NO QSP'})
+    
+    if not valid.get_comments.validate(QSP):
+        print(valid.get_comments.errors)
+        return build_response(400,{'msg':'Error in QSP'})
+    
+    return build_response(400,{'msg':"Good so far"})
+
+def post_comment(e):
+    BODY = e.get('body')
+    if BODY is None:
+        return build_response(400,{'msg':'NO QSP'})
+    
+    if not valid.post_comment.validate(BODY):
+        print(valid.post_comment.errors)
+        return build_response(400,{'msg':'Error in Body'})
+    
+    return build_response(400,{'msg':"Good so far"})
+
+
 # see if user exists
 def user_exists(user_id):
     statement = "SELECT username FROM users WHERE user_id = %s"
@@ -258,7 +289,13 @@ def user_exists(user_id):
 
 # see if post exists
 def post_exists(post_id):
-    pass
+    statement = "SELECT * FROM post WHERE post_id = %s"
+    cursor.execute(statement,(post_id,))
+    check = cursor.fetchone()
+    if check is None:
+        return False
+    else:
+        return True
 
 # see if follow exists
 def follow_exists(follower_id,followee_id):
@@ -291,5 +328,13 @@ def build_response(status_code, body):
 #print(lambda_handler(create_post_event,None))
 #print(lambda_handler(get_post_event,None))
 #print(lambda_handler(follow_event,None))
-print(lambda_handler(unfollow_event,None))
+#print(lambda_handler(unfollow_event,None))
+#print(lambda_handler(get_comments_event,None))
+print(lambda_handler(post_comment_event,None))
 
+# TODAY GOALS
+# Implement: comment on post, get posts by followed user
+# Get follower count, following count
+# 2+ days
+# Implement post likes
+# Query by likes
