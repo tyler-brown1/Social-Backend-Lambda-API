@@ -21,7 +21,7 @@ API DOCUMENTATION
     want to implement: get following list , get followers list
 
 /post:
-    GET /post?id=postid -> {username, user_id, content, comments:[userid,username,content] }
+    GET /post?id=postid -> {poster_name, poster_id, content, comments:[userid,username,content] }
     - Get a post's details and comments
     ** 'post_id':{'type':'int','required':True}
 

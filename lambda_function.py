@@ -89,14 +89,14 @@ def get_user(e):
     
     username = QSP.get('user')
 
-    statement = "SELECT user_id,username FROM users WHERE username = %s;"
+    statement = "SELECT user_id FROM users WHERE username = %s;"
     cursor.execute(statement,(username,))
     res = cursor.fetchone()
     
     if not res:
         return build_response(404,"User does not exist")
 
-    obj = {'username': cursor[0], 'user_id': cursor[1]}
+    obj = {'username': username, 'user_id': res[0]}
     return build_response(200,obj)
 
 def validate_user(e):
@@ -131,7 +131,25 @@ def validate_user(e):
         return build_response(400,'Invalid credentials')
 
 def get_post(e):
-    raise NotImplementedError
+    QSP = e.get('queryStringParameters')
+    if not QSP:
+        return build_response(400, 'No Query Strings')
+
+    if not valid.get_post(QSP):
+        print("error:",valid.get_post.errors)
+        return build_response(400,"Error in QSP")
+    
+    post_id = QSP['post_id']
+
+    statement = "SELECT users.user_id,username,content FROM posts JOIN users ON posts.user_id = users.user_id WHERE post_id = %s"
+    cursor.execute(statement,(post_id,))
+    res = cursor.fetchone()
+    if len(res) == 0:
+        return build_response(404,'Post not found')
+    # get comments later
+    obj = {'poster_id': res[0],'poster_name': res[1], 'content': res[2], 'comments': ['not implemented']}
+    return build_response(obj,obj)
+
 
 def create_post(e):
     BODY = e.get('body')
@@ -152,9 +170,11 @@ def create_post(e):
     if len(check) == 0:
         return build_response(400,"User_id does not exist")
     
-    statement = "INSERT INTO users (user_id,content) VALUES(%s,%s)"
-    return build_response(200, "So far so good")
-    
+    statement = "INSERT INTO posts (user_id,content) VALUES(%s,%s)"
+    cursor.execute(statement,(user_id,content))
+    conn.commit()
+
+    return build_response(200,"Created post")
 
 def build_response(status_code, body):
     return {
@@ -171,3 +191,4 @@ def build_response(status_code, body):
 #print(lambda_handler(validate_user_event_bad,None))
 #print(lambda_handler(validate_user_event_good,None))
 #print(lambda_handler(create_post_event,None))
+print(lambda_handler(get_post_event,None))

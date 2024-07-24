@@ -38,6 +38,14 @@ create_post_event = {
   "path": "/post",
   "body": {
     "user_id": 1,
-    "content": "First post"
+    "content": "Second post"
+  }
+}
+
+get_post_event = {
+  "httpMethod": "GET",
+  "path": "/post",
+  "queryStringParameters": {
+    "post_id": 1
   }
 }
