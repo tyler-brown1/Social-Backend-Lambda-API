@@ -35,22 +35,28 @@ Work in Progress :)
 
 /posts:
 
-    GET /posts/{post_id} -> {poster_name, poster_id, content}
-    - Get a post's details and comments
-    ** 'post_id':{'type':'int string','required':True}
+    /create 
 
-    POST /posts {user_id,content} -> {post_id if valid}
-    - Create a new post
-    ** 'content':{'type':'string','required':True, 'minlength': 3, 'maxlength': 300},
-    ** 'userid':{'type':'string','required':True}
+        POST /posts/create {user_id,content} -> {post_id if valid}
+        - Create a new post
+        ** 'content':{'type':'string','required':True, 'minlength': 3, 'maxlength': 300},
+        ** 'userid':{'type':'string','required':True}
 
-    /comments
+    /{post_id}
+        
+        GET /posts/{post_id} -> {poster_name, poster_id, content}
+        - Get a post's details and comments
+        ** 'post_id':{'type':'int string','required':True}
 
-        GET /posts/{post_id}/comments?start=start&limit=limit
-        - Get comments from a post
-        ** 'post_id':{'type':'str_int','required':True}
-        ** 'start':{'type':'str_int','required':True}
-        ** 'limit':{'type':'str_int','required':True}
+        /comments
+
+            GET /posts/{post_id}/comments?start=start&limit=limit
+            - Get comments from a post
+            ** 'post_id':{'type':'str_int','required':True}
+            ** 'offset':{'type':'str_int','required':True}
+            ** 'limit':{'type':'str_int','required':True}
+
+    /comment
 
         POST /posts/comment {user_id,post_id,content}
         - Comment on a post
@@ -60,8 +66,7 @@ Work in Progress :)
     
     /like
 
-        
-
+        - Not implemented
 
 /relationships
 

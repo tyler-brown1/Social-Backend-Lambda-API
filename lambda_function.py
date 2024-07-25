@@ -1,4 +1,5 @@
-import os,json,pg8000,datetime,dotenv,hashlib,base64,time
+import os,json,psycopg2,dotenv,hashlib,base64,time
+from datetime import datetime,timezone
 import data_validators as valid
 from testevents import *
 from dotenv import load_dotenv
@@ -7,7 +8,7 @@ load_dotenv()
 """
 Main API code for all endpoints, may split into more files at some point
 """
-
+start_time = time.time()
 db_host = os.environ['DB_HOST']
 db_name = os.environ['DB_NAME']
 db_user = os.environ['DB_USER']
@@ -15,61 +16,71 @@ db_password = os.environ['DB_PASSWORD']
 db_port = os.environ['DB_PORT']
 
 
-user_path = "/user"
-user_auth = "/user/auth"
-post_path = '/post'
+get_user_by_username = "/users/username"
+user_create = "/users/create"
+user_auth = "/users/auth"
+
+get_post_by_id = '/posts/id'
+post_create = '/posts/create'
+
 follow_path = '/relationships/follow'
 unfollow_path = '/relationships/unfollow'
-comment_path = '/post/comment'
+
+comment_on = '/posts/comment'
 
 
-conn = pg8000.connect(
+
+conn = psycopg2.connect(
     host=db_host,
-    database=db_name,
+    dbname=db_name,
     user=db_user,
     password=db_password,
     port=db_port
 )
 cursor = conn.cursor()
 
-def timer_wrapper(func):
-    def wrapper(*args, **kwargs):
-        start_time = time.time()
-        result = func(*args, **kwargs)
-        end_time = time.time()
-        elapsed_time = end_time - start_time
-        print(f"Took {elapsed_time:.4f} seconds to execute.")
-        return result
-    return wrapper
-
-@timer_wrapper # will remove eventually
 def lambda_handler(event,context):
     
     method = event.get('httpMethod')
     path = event.get('path')
+
+    if 'queryStringParameters' not in event:
+        event['queryStringParameters'] = {}
+    if 'body' not in event:
+        event['body'] = {}
+    if 'pathParameters' not in event:
+        event['pathParameters'] = {}
+
     # Try to implement handlers for each path maybe
 
-    try: # clean up sometime
-        if path == user_path and method == 'POST':
-            return create_user(event)
-        elif path == user_path and method == 'GET':
-            return get_user(event)
-        elif path == user_auth and method == 'GET':
-            return validate_user(event)
-        elif path == post_path and method == 'GET':
-            return get_post(event)
-        elif path == post_path and method == 'POST':
-            return create_post(event)
-        elif path == follow_path and method == 'POST':
-            return follow(event)
-        elif path == unfollow_path and method == 'POST':
-            return unfollow(event)
-        elif path == comment_path and method == 'GET':
-            return get_comments(event)
-        elif path == comment_path and method == 'POST':
-            return post_comment(event)
-        else:
-            return build_response(400,{"msg":"Not implemented for this endpoint"})
+    try: #
+        if path.startswith('/users'):
+            if path.startswith(get_user_by_username) and method == 'GET':
+                return get_user(event)
+            elif path == user_create and method == 'POST':
+                return create_user(event)
+            elif path == user_auth and method == 'POST':
+                return validate_user(event)
+            
+        elif path.startswith('/posts'):
+            if path.startswith(get_post_by_id) and method == 'GET':
+                return get_post(event)
+            elif path == post_create and method == 'POST':
+                return create_post(event)
+            elif path == comment_on and method == 'POST':
+                return post_comment(event)
+            else:
+                splits = path.split('/')
+                if len(splits)>3 and splits[3] == 'comments':
+                    return get_comments(event)
+        
+        elif path.startswith('/relationships'):
+            if path == follow_path and method == 'POST':
+                return follow(event)
+            elif path == unfollow_path and method == 'POST':
+                return unfollow(event)
+
+        return build_response(400,{"msg":"Not implemented for this endpoint"})
         
     except NotImplementedError: #This is just so I see the actual errors while developing. Exception as e:
         return build_response(500,{"msg": type("e").__name__})
@@ -77,11 +88,12 @@ def lambda_handler(event,context):
     finally:
         cursor.close()
         conn.close()
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        print(f"Took {elapsed_time:.4f} seconds to execute.")
 
 def create_user(e):
-    BODY = e.get('body')
-    if not BODY:
-        return build_response(400,{"msg": "No body"})
+    BODY = e['body']
 
     if not valid.create_user(BODY):
         print("error:",valid.create_user.errors) # remove these later
@@ -109,15 +121,14 @@ def create_user(e):
     return build_response(200,{"msg": "Sucessfully added","new_user_id":new_id})
 
 def get_user(e):
-    QSP = e.get('queryStringParameters')
-    if not QSP:
-        return build_response(400,{"msg": "No QSP"})
 
-    if not valid.get_user.validate(QSP):
+    params = e['pathParameters']
+
+    if not valid.get_user.validate(params):
         print("error:",valid.get_user.errors)
-        return build_response(400,{"msg": "Error in QSP"})
+        return build_response(400,{"msg": "Error in parameters"})
     
-    username = QSP.get('user')
+    username = params['username']
 
     statement = "SELECT user_id FROM users WHERE username = %s"
 
@@ -133,7 +144,7 @@ def get_user(e):
     return build_response(200,obj)
 
 def validate_user(e):
-    BODY = e.get('body')
+    BODY = e['body']
     if not BODY:
         return build_response(400,{"msg": "No body"})
 
@@ -164,30 +175,29 @@ def validate_user(e):
         return build_response(400,{"msg": "Invalid Credentials"})
 
 def get_post(e):
-    QSP = e.get('queryStringParameters')
-    if not QSP:
-        return build_response(400,{"msg": "No QSP"})
+    params = e['pathParameters']
 
-    if not valid.get_post.validate(QSP):
+    if not valid.get_post.validate(params):
         print("error:",valid.get_post.errors)
-        return build_response(400,{"msg": "Error in QSP"})
+        return build_response(400,{"msg": "Error in params"})
     
-    post_id = int(QSP['post_id'])
+    post_id = int(params['post_id'])
 
-    statement = "SELECT users.user_id,username,content FROM posts JOIN users ON posts.user_id = users.user_id WHERE post_id = %s"
+    statement = "SELECT users.user_id,username,content,posts.created_at FROM posts JOIN users ON posts.user_id = users.user_id WHERE post_id = %s"
     cursor.execute(statement,(post_id,))
     res = cursor.fetchone()
     if res is None:
         return build_response(404,{'msg':'Post not found'})
     
-    obj = {'message':'Success','poster_id': res[0],'poster_name': res[1], 'content': res[2]}
+    elapsed = (datetime.now(timezone.utc)-res[3])
+    hours_ago = elapsed.days*24 + elapsed.seconds//3600
+
+    obj = {'message':'Success','poster_id': res[0],'poster_name': res[1], 'content': res[2], 'hours_ago': hours_ago}
     return build_response(200,obj)
 
 
 def create_post(e):
-    BODY = e.get('body')
-    if not BODY:
-        return build_response(400,{"msg": "No body"})
+    BODY = e['body']
     
     if not valid.create_post.validate(BODY):
         print("error:",valid.create_post.errors)
@@ -209,10 +219,8 @@ def create_post(e):
 
 
 def follow(e):
-    BODY = e.get('body')
-    if not BODY:
-        return build_response(400,{"msg": "No body"})
-    
+    BODY = e['body']
+
     if not valid.follow.validate(BODY):
         print(valid.follow.errors)
         return build_response(400,{"msg": "Error in body"})
@@ -232,9 +240,7 @@ def follow(e):
     return build_response(200,{'msg':'Success'})
 
 def unfollow(e):
-    BODY = e.get('body')
-    if not BODY:
-        return build_response(400,{"msg": "No body"})
+    BODY = e['body']
     
     if not valid.unfollow.validate(BODY):
         print(valid.unfollow.errors)
@@ -255,26 +261,59 @@ def unfollow(e):
     return build_response(200,{'msg':'Success'})
 
 def get_comments(e):
-    QSP = e.get('queryStringParameters')
-    if QSP is None:
-        return build_response(400,{'msg':'NO QSP'})
-    
-    if not valid.get_comments.validate(QSP):
+
+    PP = e['pathParameters']
+    QSP = e['queryStringParameters']
+    params = {'post_id': PP.get('post_id',"error"),'limit':QSP.get('limit',"20"),'offset':QSP.get('offset',"0")}
+
+    if not valid.get_comments.validate(params):
         print(valid.get_comments.errors)
-        return build_response(400,{'msg':'Error in QSP'})
+        return build_response(400,{'msg':'Error in Parameters'})
     
-    return build_response(400,{'msg':"Good so far"})
+    post_id = int(params['post_id'])
+
+    statement = """
+    SELECT u.user_id,username,c.content,c.created_at
+    FROM comments c 
+    JOIN posts p ON c.post_id = p.post_id
+    JOIN users u ON p.user_id = u.user_id
+    WHERE c.post_id = %s;
+    """
+
+    cursor.execute(statement,(post_id,))
+    res = cursor.fetchall()
+    comments = []
+
+    for entry in res:
+        elapsed = (datetime.now(timezone.utc)-entry[3])
+        hours_ago = elapsed.days*24 + elapsed.seconds//3600
+        comments.append({'user_id':entry[0],'username':entry[1],'content':entry[2],'hours_ago':hours_ago})
+
+    return build_response(200,{'msg':"Success","comments":comments})
 
 def post_comment(e):
-    BODY = e.get('body')
-    if BODY is None:
-        return build_response(400,{'msg':'NO QSP'})
+    BODY = e['body']
     
     if not valid.post_comment.validate(BODY):
         print(valid.post_comment.errors)
         return build_response(400,{'msg':'Error in Body'})
     
-    return build_response(400,{'msg':"Good so far"})
+    user_id = BODY['user_id']
+    post_id = BODY['post_id']
+    content = BODY['content']
+
+    if not user_exists(user_id):
+        return build_response(400,{'msg':'User does not exist'})
+    
+    if not post_exists(post_id):
+        return build_response(400,{'msg':'Post does not exist'})
+
+    statement = "INSERT INTO comments (user_id,post_id,content) VALUES (%s,%s,%s)"
+
+    cursor.execute(statement,(user_id,post_id,content))
+    conn.commit()
+
+    return build_response(400,{'msg':"Success"})
 
 
 # see if user exists
@@ -289,7 +328,7 @@ def user_exists(user_id):
 
 # see if post exists
 def post_exists(post_id):
-    statement = "SELECT * FROM post WHERE post_id = %s"
+    statement = "SELECT * FROM posts WHERE post_id = %s"
     cursor.execute(statement,(post_id,))
     check = cursor.fetchone()
     if check is None:
@@ -308,8 +347,7 @@ def follow_exists(follower_id,followee_id):
     else:
         return True
 
-
-
+# Return json object with code and body
 def build_response(status_code, body):
     return {
         'statusCode': status_code,
@@ -330,11 +368,12 @@ def build_response(status_code, body):
 #print(lambda_handler(follow_event,None))
 #print(lambda_handler(unfollow_event,None))
 #print(lambda_handler(get_comments_event,None))
-print(lambda_handler(post_comment_event,None))
+#print(lambda_handler(post_comment_event,None))
 
 # TODAY GOALS
-# Implement: comment on post, get posts by followed user
+# Implement: comment on post | Done
 # Get follower count, following count
+# Get posts by user
 # 2+ days
 # Implement post likes
 # Query by likes

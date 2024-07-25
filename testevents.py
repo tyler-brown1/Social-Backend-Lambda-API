@@ -4,42 +4,42 @@ Mock Event objects to test
 
 create_user_event = {
   "httpMethod": "POST",
-  "path": "/user",
+  "path": "/users/create",
   "body": {
-    "username": "bob3",
+    "username": "bob5",
     "password": "thisIsMyPassword"
   }
 }
 
 get_user_event = {
   "httpMethod": "GET",
-  "path": "/user",
-  "queryStringParameters": {
-    "user": "bob334",
+  "path": "/users/username/bob5",
+  "pathParameters":{
+      "username": "user1"
   }
 }
 
 validate_user_event_bad = {
-  "httpMethod": "GET",
-  "path": "/user/auth",
+  "httpMethod": "POST",
+  "path": "/users/auth",
   "body": {
-    "username": "bob334",
+    "username": "bob3",
     "guess": "thisIsNotMyPassword"
   }
 }
 
 validate_user_event_good = {
-  "httpMethod": "GET",
-  "path": "/user/auth",
+  "httpMethod": "POST",
+  "path": "/users/auth",
   "body": {
-    "username": "bob334",
+    "username": "bob3",
     "guess": "thisIsMyPassword"
   }
 }
 
 create_post_event = {
   "httpMethod": "POST",
-  "path": "/post",
+  "path": "/posts/create",
   "body": {
     "user_id": 1,
     "content": "First post"
@@ -48,8 +48,8 @@ create_post_event = {
 
 get_post_event = {
   "httpMethod": "GET",
-  "path": "/post",
-  "queryStringParameters": {
+  "path": "/posts/id/1",
+  "pathParameters": {
     "post_id": "1"
   }
 }
@@ -74,20 +74,22 @@ unfollow_event = {
 
 post_comment_event = {
   "httpMethod": "POST",
-  "path": "/post/comment",
+  "path": "/posts/comment",
   "body": {
-    "post_id": 1,
-    "user_id": 3,
-    "content": "First comment"
+    "post_id": 2,
+    "user_id": 4,
+    "content": "Second comment!"
   }
 }
 
 get_comments_event = {
   "httpMethod": "GET",
-  "path": "/post/comment",
+  "path": "/posts/1/comments",
   "queryStringParameters": {
-    "post_id": "1",
     "limit": "20",
     "offset": "0"
+  },
+  "pathParameters":{
+    "post_id": "2"
   }
 }

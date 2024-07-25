@@ -4,13 +4,16 @@ Data validators for endpoints
 """
 
 class MyValidator(Validator):
+
     def _validate_str_int(self, argument, field, value):
         """{'type': 'boolean'}"""
-        return value.isdigit() and int(value)>=0
+        if not (value.isdigit() and int(value)>=0):
+            self._error(field,'str must be a valid int')
     
     def _validate_nonneg(self, argument, field, value):
         """{'type': 'boolean'}"""
-        return  value>0
+        if value<0:
+            self._error(field,'int must be nonnegative')
     
             
 create_user = MyValidator({
@@ -18,7 +21,7 @@ create_user = MyValidator({
     'password':{'type':'string','minlength':5,'maxlength':18,'required':True}
 })
 get_user = MyValidator({
-    'user':{'type':'string','required':True}
+    'username':{'type':'string','required':True}
 })
 validate_user = MyValidator({
     'username':{'type':'string','required':True},
@@ -29,7 +32,7 @@ create_post = MyValidator({
     'user_id':{'type':'integer','required':True, 'nonneg': True}
 })
 get_post = MyValidator({
-    'post_id':{'type':'string','str_int':True,'required':True, 'nonneg': True}
+    'post_id':{'type':'string','str_int':True,'required':True, 'str_int': True}
 })
 follow = MyValidator({
     'follower_id':{'type':'integer','required':True, 'nonneg': True},
