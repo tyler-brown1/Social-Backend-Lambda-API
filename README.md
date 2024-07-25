@@ -24,15 +24,16 @@ Work in Progress :)
         ** 'username':{'type':'string','required':True}, 
         ** 'guess' :{'type':'string','required':True}
     
-    PATCH /users/id/{user_id} {email}
+    PATCH /users/update/{user_id} {email}
     -not implemented 
 
-    DELETE /users/id/{user_id}
+    DELETE /users/delete/{user_id}
     -not implemented
 
-    want to implement: 
-    get following list , get followers list. These could input a user_id to join on follows
-
+    GET /users/{user_id}/posts?limit=limit&offset=offset
+    'user_id':{'type':'string','required':True, 'str_int': True},
+    'limit':{'type':'string','required':True,'str_int':True},
+    'offset':{'type':'string','required':True,'str_int':True},
 /posts:
 
     /create 
@@ -50,7 +51,7 @@ Work in Progress :)
 
         /comments
 
-            GET /posts/{post_id}/comments?start=start&limit=limit
+            GET /posts/{post_id}/comments?offset=offset&limit=limit
             - Get comments from a post
             ** 'post_id':{'type':'str_int','required':True}
             ** 'offset':{'type':'str_int','required':True}

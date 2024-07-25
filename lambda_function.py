@@ -61,6 +61,10 @@ def lambda_handler(event,context):
                 return create_user(event)
             elif path == user_auth and method == 'POST':
                 return validate_user(event)
+            else:
+                splits = path.split('/')
+                if len(splits)>3 and splits[3] == 'posts':
+                    return get_user_posts(event)
             
         elif path.startswith('/posts'):
             if path.startswith(get_post_by_id) and method == 'GET':
@@ -130,7 +134,21 @@ def get_user(e):
     
     username = params['username']
 
-    statement = "SELECT user_id FROM users WHERE username = %s"
+    statement = """
+    SELECT user_id,
+    (
+        SELECT COUNT(*)
+        FROM follows
+        WHERE follower_id = user_id
+    ) AS followers,
+    (
+        SELECT COUNT(*)
+        FROM follows
+        WHERE followee_id = user_id
+    )
+    FROM users 
+    WHERE username = %s;
+    """
 
     cursor.execute(statement,(username,))
     res = cursor.fetchone()
@@ -138,10 +156,43 @@ def get_user(e):
     if res is None:
         return build_response(404,{"msg": "User does not exist"})
 
-    statement = "I need to look up subqueries"
-
-    obj = {'username': username, 'user_id': res[0], 'followers': 0,'following':0,'msg': "Success"}
+    obj = {'username': username, 'user_id': res[0], 'followers': res[2],'following':res[1],'msg': "Success"}
     return build_response(200,obj)
+
+def get_user_posts(e):
+    PP = e['pathParameters']
+    QSP = e['queryStringParameters']
+
+    params = {'user_id':PP.get('user_id','error'),'offset':QSP.get('offset',"0"),'limit':QSP.get('limit',"20")}
+
+    if not valid.get_user_posts.validate(params):
+        print(valid.get_user_posts.errors)
+        return build_response(400,{"msg":"Error in parameters"})
+    
+    user_id = int(params['user_id'])
+    offset = int(params['offset'])
+    limit = int(params['limit'])
+
+    statement = """
+    SELECT post_id,content,p.created_at,username 
+    FROM posts p 
+    JOIN users u ON p.user_id = u.user_id 
+    WHERE p.user_id = %s
+    ORDER BY post_id DESC
+    OFFSET %s
+    LIMIT %s
+    """
+
+    cursor.execute(statement,(user_id,offset,limit))
+    res = cursor.fetchall()
+    posts = []
+    for entry in res:
+        elapsed = (datetime.now(timezone.utc)-entry[2])
+        hours_ago = elapsed.days*24 + elapsed.seconds//3600
+        posts.append({'post_id': entry[0], 'content': entry[1], 'hours_ago': hours_ago, 'username': entry[3]})
+
+    return build_response(200,{'msg':'Success','posts':posts})
+
 
 def validate_user(e):
     BODY = e['body']
@@ -183,7 +234,11 @@ def get_post(e):
     
     post_id = int(params['post_id'])
 
-    statement = "SELECT users.user_id,username,content,posts.created_at FROM posts JOIN users ON posts.user_id = users.user_id WHERE post_id = %s"
+    statement = """
+    SELECT users.user_id,username,content,posts.created_at 
+    FROM posts JOIN users ON posts.user_id = users.user_id 
+    WHERE post_id = %s
+    """
     cursor.execute(statement,(post_id,))
     res = cursor.fetchone()
     if res is None:
@@ -271,16 +326,21 @@ def get_comments(e):
         return build_response(400,{'msg':'Error in Parameters'})
     
     post_id = int(params['post_id'])
+    limit = int(params['limit'])
+    offset = int(params['offset'])
 
     statement = """
     SELECT u.user_id,username,c.content,c.created_at
     FROM comments c 
     JOIN posts p ON c.post_id = p.post_id
     JOIN users u ON p.user_id = u.user_id
-    WHERE c.post_id = %s;
+    WHERE c.post_id = %s
+    ORDER BY c.comment_id DESC
+    OFFSET %s
+    LIMIT %s;
     """
 
-    cursor.execute(statement,(post_id,))
+    cursor.execute(statement,(post_id,offset,limit))
     res = cursor.fetchall()
     comments = []
 
@@ -369,11 +429,11 @@ def build_response(status_code, body):
 #print(lambda_handler(unfollow_event,None))
 #print(lambda_handler(get_comments_event,None))
 #print(lambda_handler(post_comment_event,None))
+print(lambda_handler(get_user_posts_event,None))
 
 # TODAY GOALS
-# Implement: comment on post | Done
-# Get follower count, following count
 # Get posts by user
 # 2+ days
 # Implement post likes
 # Query by likes
+# Query by new

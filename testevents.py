@@ -13,7 +13,7 @@ create_user_event = {
 
 get_user_event = {
   "httpMethod": "GET",
-  "path": "/users/username/bob5",
+  "path": "/users/username/user1",
   "pathParameters":{
       "username": "user1"
   }
@@ -58,8 +58,8 @@ follow_event = {
   "httpMethod": "POST",
   "path": "/relationships/follow",
   "body": {
-    "follower_id": 1,
-    "followee_id": 3
+    "follower_id": 2,
+    "followee_id": 1
   }
 }
 
@@ -91,5 +91,17 @@ get_comments_event = {
   },
   "pathParameters":{
     "post_id": "2"
+  }
+}
+
+get_user_posts_event = {
+  "httpMethod": "GET",
+  "path": "/users/1/posts",
+  "queryStringParameters": {
+    "limit": "2", # not implemented yet
+    "offset": "0"
+  },
+  "pathParameters":{
+    "user_id": "2"
   }
 }

@@ -52,3 +52,8 @@ post_comment = MyValidator({
     'user_id':{'type':'integer','required':True,'nonneg': True},
     'content':{'type':'string','required':True, 'minlength': 3, 'maxlength': 300}
 })
+get_user_posts = MyValidator({
+    'user_id':{'type':'string','required':True, 'str_int': True},
+    'limit':{'type':'string','required':True,'str_int':True},
+    'offset':{'type':'string','required':True,'str_int':True},
+})
