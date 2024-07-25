@@ -12,7 +12,7 @@ Work in Progress :)
     
     /create
 
-        POST /users/create {username,password} -> (user_id)
+        POST /users/create {username,password} -> {user_id}
         - Create a new user
         ** 'username':{'type':'string','minlength':4,'maxlength':12,'required':True},
         ** 'password':{'type':'string','minlength':5,'maxlength':18,'required':True}
@@ -24,16 +24,17 @@ Work in Progress :)
         ** 'username':{'type':'string','required':True}, 
         ** 'guess' :{'type':'string','required':True}
     
-    PATCH /users/update/{user_id} {email}
+    PATCH /users/update/{user_id} {email or username}
     -not implemented 
 
     DELETE /users/delete/{user_id}
     -not implemented
 
-    GET /users/{user_id}/posts?limit=limit&offset=offset
+    GET /users/{user_id}/posts?limit&offset -> {posts:[{user_id, post_id,username, content, hours_ago}]}
     'user_id':{'type':'string','required':True, 'str_int': True},
     'limit':{'type':'string','required':True,'str_int':True},
     'offset':{'type':'string','required':True,'str_int':True},
+
 /posts:
 
     /create 
@@ -45,13 +46,13 @@ Work in Progress :)
 
     /{post_id}
         
-        GET /posts/{post_id} -> {poster_name, poster_id, content}
+        GET /posts/{post_id}?user -> {poster_name, poster_id, content, hours_ago, liked <- not implemented}
         - Get a post's details and comments
         ** 'post_id':{'type':'int string','required':True}
 
         /comments
 
-            GET /posts/{post_id}/comments?offset=offset&limit=limit
+            GET /posts/{post_id}/comments?offset&limit -> {comments:[{user_id, post_id,username, content, hours_ago}]}
             - Get comments from a post
             ** 'post_id':{'type':'str_int','required':True}
             ** 'offset':{'type':'str_int','required':True}
@@ -81,14 +82,14 @@ Work in Progress :)
         ** 'unfollower_id':{'type':'integer'},
         ** 'unfollowee_id':{'type':'integer'}
 
-
 /feed
 
-    GET /feed/new?user=user_id&limit=limit -> [posts]
+    GET /feed/new?limit&offset&user -> {posts:[{user_id, post_id,username, content, hours_ago, liked}]}
     - Gets new posts by accounts they follow
+    - Shows if the user liked if parameter
     - not implemented
 
-    GET /feed/top?within=time&limit=limit -> [posts]
+    GET /feed/top?within&limit&user -> {posts:[{user_id, post_id,username, content, hours_ago}]}
     - Gets new posts by top within a time
     - not implemented
     
