@@ -15,7 +15,7 @@ get_user_event = {
   "httpMethod": "GET",
   "path": "/users/username/user1",
   "pathParameters":{
-      "username": "user1"
+      "username": "user1a"
   }
 }
 
@@ -98,10 +98,20 @@ get_user_posts_event = {
   "httpMethod": "GET",
   "path": "/users/1/posts",
   "queryStringParameters": {
-    "limit": "2", # not implemented yet
+    "limit": "5",
     "offset": "0"
   },
   "pathParameters":{
     "user_id": "2"
+  }
+}
+
+get_new_feed_event = {
+  "httpMethod": "GET",
+  "path": "/feed/new",
+  "queryStringParameters": {
+    "limit": "3", 
+    "offset": "1",
+    #"user":"1"
   }
 }

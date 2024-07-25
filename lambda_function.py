@@ -5,6 +5,7 @@ from testevents import *
 from dotenv import load_dotenv
 load_dotenv()
 
+
 """
 Main API code for all endpoints, may split into more files at some point
 """
@@ -27,8 +28,7 @@ follow_path = '/relationships/follow'
 unfollow_path = '/relationships/unfollow'
 
 comment_on = '/posts/comment'
-
-
+feed_new = '/feed/new'
 
 conn = psycopg2.connect(
     host=db_host,
@@ -40,7 +40,6 @@ conn = psycopg2.connect(
 cursor = conn.cursor()
 
 def lambda_handler(event,context):
-    
     method = event.get('httpMethod')
     path = event.get('path')
 
@@ -83,6 +82,10 @@ def lambda_handler(event,context):
                 return follow(event)
             elif path == unfollow_path and method == 'POST':
                 return unfollow(event)
+        
+        elif path.startswith('/feed'):
+            if path == feed_new and method == 'GET':
+                return get_feed_new(event)
 
         return build_response(400,{"msg":"Not implemented for this endpoint"})
         
@@ -129,7 +132,7 @@ def get_user(e):
     params = e['pathParameters']
 
     if not valid.get_user.validate(params):
-        print("error:",valid.get_user.errors)
+        print(valid.get_user.errors)
         return build_response(400,{"msg": "Error in parameters"})
     
     username = params['username']
@@ -173,6 +176,9 @@ def get_user_posts(e):
     offset = int(params['offset'])
     limit = int(params['limit'])
 
+    if not user_exists(user_id):
+        return build_response(404,{'msg':'User not found'})
+
     statement = """
     SELECT post_id,content,p.created_at,username 
     FROM posts p 
@@ -189,7 +195,7 @@ def get_user_posts(e):
     for entry in res:
         elapsed = (datetime.now(timezone.utc)-entry[2])
         hours_ago = elapsed.days*24 + elapsed.seconds//3600
-        posts.append({'post_id': entry[0], 'content': entry[1], 'hours_ago': hours_ago, 'username': entry[3]})
+        posts.append({'user_id':user_id, 'post_id': entry[0], 'content': entry[1], 'hours_ago': hours_ago, 'username': entry[3]})
 
     return build_response(200,{'msg':'Success','posts':posts})
 
@@ -247,7 +253,8 @@ def get_post(e):
     elapsed = (datetime.now(timezone.utc)-res[3])
     hours_ago = elapsed.days*24 + elapsed.seconds//3600
 
-    obj = {'message':'Success','poster_id': res[0],'poster_name': res[1], 'content': res[2], 'hours_ago': hours_ago}
+    obj = {'message':'Success','user_id': res[0],'username': res[1], 'content': res[2], 
+           'hours_ago': hours_ago, 'liked': "Not implemented"}
     return build_response(200,obj)
 
 
@@ -375,6 +382,42 @@ def post_comment(e):
 
     return build_response(400,{'msg':"Success"})
 
+def get_feed_new(e):
+    QSP = e['queryStringParameters']
+    params = {'limit':QSP.get('limit'),'offset':QSP.get('offset')}
+    if 'user' in QSP:
+        params['user'] = QSP['user']
+
+    if not valid.get_feed_new.validate(params):
+        print(valid.get_feed_new.errors)
+        return build_response(400,{"msg": "Error in params"})
+
+    limit = params['limit']
+    offset = params['offset']
+
+    if 0: #'user' in QSP:
+        statement = """
+        Implement when I implement likes
+        """
+    else:
+        statement = """
+        SELECT post_id, username, u.user_id, content, p.created_at
+        FROM posts p
+        JOIN users u ON p.user_id = u.user_id
+        ORDER BY post_id DESC
+        LIMIT %s
+        OFFSET %s
+        """
+        cursor.execute(statement,(limit,offset))
+        res = cursor.fetchall()
+        posts = []
+        for entry in res:
+            elapsed = (datetime.now(timezone.utc)-entry[4])
+            hours_ago = elapsed.days*24 + elapsed.seconds//3600
+            posts.append({'user_id':entry[2], 'post_id': entry[0], 'content': entry[3], 'hours_ago': hours_ago, 'username': entry[1]})
+        return build_response(200,{"msg": "Success", "posts":posts})
+
+
 
 # see if user exists
 def user_exists(user_id):
@@ -417,8 +460,6 @@ def build_response(status_code, body):
         'body': json.dumps(body)
     }
 
-
-
 #print(lambda_handler(create_user_event,None))
 #print(lambda_handler(get_user_event,None))
 #print(lambda_handler(validate_user_event_bad,None))
@@ -429,11 +470,14 @@ def build_response(status_code, body):
 #print(lambda_handler(unfollow_event,None))
 #print(lambda_handler(get_comments_event,None))
 #print(lambda_handler(post_comment_event,None))
-print(lambda_handler(get_user_posts_event,None))
+#print(lambda_handler(get_user_posts_event,None))
+print(lambda_handler(get_new_feed_event,None))
 
-# TODAY GOALS
-# Get posts by user
-# 2+ days
+
+# GOALS
 # Implement post likes
 # Query by likes
-# Query by new
+# Query by new and feed
+# Delete user
+# Delete post, username
+# Patch email...
