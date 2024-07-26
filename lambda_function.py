@@ -23,11 +23,11 @@ user_auth = "/users/auth"
 
 get_post_by_id = '/posts/id'
 post_create = '/posts/create'
+comment_on = '/posts/comment'
 
 follow_path = '/relationships/follow'
 unfollow_path = '/relationships/unfollow'
 
-comment_on = '/posts/comment'
 feed_new = '/feed/new'
 
 conn = psycopg2.connect(
@@ -62,8 +62,13 @@ def lambda_handler(event,context):
                 return validate_user(event)
             else:
                 splits = path.split('/')
-                if len(splits)>3 and splits[3] == 'posts':
-                    return get_user_posts(event)
+                if len(splits)==4:
+                    if splits[3] == 'posts':
+                        return get_user_posts(event)
+                    elif splits[3] == 'followers':
+                        return get_user_followers(event)
+                    elif splits[3] == 'following':
+                        return get_user_following(event)
             
         elif path.startswith('/posts'):
             if path.startswith(get_post_by_id) and method == 'GET':
@@ -290,6 +295,9 @@ def follow(e):
     follower_id = BODY['follower_id']
     followee_id = BODY['followee_id']
 
+    if follower_id == followee_id:
+        return build_response(400,{"msg": "Cannot have same follower and followee"})
+
     if follow_exists(follower_id,followee_id):
         return build_response(400,{"msg": "Relationship already exists"})
 
@@ -310,6 +318,9 @@ def unfollow(e):
     
     unfollower_id = BODY['unfollower_id']
     unfollowee_id = BODY['unfollowee_id']
+
+    if unfollower_id == unfollowee_id:
+        return build_response(400,{"msg": "Cannot have same follower and followee"})
 
     if not follow_exists(unfollower_id,unfollowee_id):
         return build_response(400,{"msg": "Relationship doesn't exists"})
@@ -384,7 +395,7 @@ def post_comment(e):
 
 def get_feed_new(e):
     QSP = e['queryStringParameters']
-    params = {'limit':QSP.get('limit'),'offset':QSP.get('offset')}
+    params = {'limit':QSP.get('limit',20),'offset':QSP.get('offset',0)}
     if 'user' in QSP:
         params['user'] = QSP['user']
 
@@ -417,7 +428,69 @@ def get_feed_new(e):
             posts.append({'user_id':entry[2], 'post_id': entry[0], 'content': entry[3], 'hours_ago': hours_ago, 'username': entry[1]})
         return build_response(200,{"msg": "Success", "posts":posts})
 
+def get_user_followers(e):
+    QSP = e['queryStringParameters']
+    PP = e['pathParameters']
+    params = {'limit':QSP.get('limit',30),'offset':QSP.get('offset',0),'user_id':PP.get('user_id','error')}
 
+    if not valid.get_user_follows.validate(params):
+        print(valid.get_user_follows.errors)
+        return build_response(400,{"msg": "Error in params"})
+    
+    limit = params['limit']
+    offset = params['offset']
+    user_id = int(params['user_id'])
+
+    if not user_exists(user_id):
+        return build_response(400,{"msg": "User does not exist"})
+
+    statement = """
+    SELECT username, user_id
+    FROM follows
+    JOIN users ON follower_id = user_id
+    WHERE followee_id = %s
+    ORDER BY followed_at DESC
+    LIMIT %s
+    OFFSET %s
+    """
+    cursor.execute(statement,(user_id,limit,offset))
+    res = cursor.fetchall()
+    followers = []
+    for entry in res:
+        followers.append({'user_id':entry[1], 'username': entry[0]})
+    return build_response(200,{"msg": "Success", "followers":followers})
+
+def get_user_following(e):
+    QSP = e['queryStringParameters']
+    PP = e['pathParameters']
+    params = {'limit':QSP.get('limit',30),'offset':QSP.get('offset',0),'user_id':PP.get('user_id','error')}
+
+    if not valid.get_user_follows.validate(params):
+        print(valid.get_user_follows.errors)
+        return build_response(400,{"msg": "Error in params"})
+    
+    limit = params['limit']
+    offset = params['offset']
+    user_id = int(params['user_id'])
+
+    if not user_exists(user_id):
+        return build_response(400,{"msg": "User does not exist"})
+
+    statement = """
+    SELECT username, user_id
+    FROM follows
+    JOIN users ON followee_id = user_id
+    WHERE follower_id = %s
+    ORDER BY followed_at DESC
+    LIMIT %s
+    OFFSET %s
+    """
+    cursor.execute(statement,(user_id,limit,offset))
+    res = cursor.fetchall()
+    following = []
+    for entry in res:
+        following.append({'user_id':entry[1], 'username': entry[0]})
+    return build_response(200,{"msg": "Success", "followers":following})
 
 # see if user exists
 def user_exists(user_id):
@@ -471,13 +544,19 @@ def build_response(status_code, body):
 #print(lambda_handler(get_comments_event,None))
 #print(lambda_handler(post_comment_event,None))
 #print(lambda_handler(get_user_posts_event,None))
-print(lambda_handler(get_new_feed_event,None))
+#print(lambda_handler(get_new_feed_event,None))
+#print(lambda_handler(get_followers_event,None))
+#print(lambda_handler(get_following_event,None))
+
+
 
 
 # GOALS
-# Implement post likes
-# Query by likes
-# Query by new and feed
+# Change post path
+# Feed by following
+
 # Delete user
-# Delete post, username
-# Patch email...
+# Delete post
+# Patch email,username,phone number
+# Implement post likes
+# Feed by likes

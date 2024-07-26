@@ -58,8 +58,8 @@ follow_event = {
   "httpMethod": "POST",
   "path": "/relationships/follow",
   "body": {
-    "follower_id": 2,
-    "followee_id": 1
+    "follower_id": 1,
+    "followee_id": 4
   }
 }
 
@@ -68,7 +68,7 @@ unfollow_event = {
   "path": "/relationships/unfollow",
   "body": {
     "unfollower_id": 1,
-    "unfollowee_id": 3
+    "unfollowee_id": 2
   }
 }
 
@@ -113,5 +113,29 @@ get_new_feed_event = {
     "limit": "3", 
     "offset": "1",
     #"user":"1"
+  }
+}
+
+get_followers_event = {
+  "httpMethod": "GET",
+  "path": "/users/1/followers",
+  "queryStringParameters": {
+    "limit": "30", 
+    "offset": "0",
+  },
+  "pathParameters":{
+    "user_id": "1",
+  }
+}
+
+get_following_event = {
+  "httpMethod": "GET",
+  "path": "/users/1/following",
+  "queryStringParameters": {
+    "limit": "30", 
+    "offset": "0",
+  },
+  "pathParameters":{
+    "user_id": "1",
   }
 }

@@ -67,4 +67,8 @@ get_feed_new = MyValidator({
     'limit':{'type':'string','required':True,'str_int':True},
     'offset':{'type':'string','required':True,'str_int':True},
 })
-
+get_user_follows = MyValidator({ # sane for followers and following
+    'user_id':{'type':'string', 'str_int': True, 'required':True},
+    'limit':{'type':'string','required':True,'str_int':True},
+    'offset':{'type':'string','required':True,'str_int':True},
+})

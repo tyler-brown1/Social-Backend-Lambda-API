@@ -27,6 +27,8 @@ def create_tables():
         user_id SERIAL PRIMARY KEY,
         username VARCHAR(12) UNIQUE NOT NULL,
         password_hash VARCHAR(64) NOT NULL,
+        phone_number VARCHAR(16),
+        email VARCHAR(64),
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
     )"""
     posts_create = """
@@ -41,7 +43,6 @@ def create_tables():
     CREATE TABLE follows(
         follower_id INT NOT NULL,
         followee_id INT NOT NULL,
-        email VARCHAR(64),
         followed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY (follower_id, followee_id),
         FOREIGN KEY (follower_id) REFERENCES users(user_id) ON DELETE CASCADE,
@@ -64,7 +65,7 @@ def create_tables():
     cursor.execute(follows_create)
     cursor.execute(comments_create)
     conn.commit()
-    print("Created")
+    print("Created tables")
 
 
 def delete_tables():
@@ -93,9 +94,14 @@ def drop_tables():
     conn.commit()
     print("Dropped tables")
 
+num_users = 30
+num_posts = 100
+num_follows = 200
+num_comments = 100
+
 def populate_users():
     users = []
-    for i in range(5):
+    for i in range(num_users):
         users.append((f'user{i+1}',"a"))
     statement = "INSERT INTO users (username,password_hash) VALUES(%s,%s)"
     cursor.executemany(statement,users)
@@ -104,10 +110,10 @@ def populate_users():
 
 def populate_follows():
     follows = set()
-    for i in range(2000):
-        a = random.randint(1,100)
-        b = random.randint(1,100)
-        if (a,b) in follows: continue
+    for i in range(num_follows):
+        a = random.randint(1,num_users)
+        b = random.randint(1,num_users)
+        if a==b or (a,b) in follows: continue
         follows.add((a,b))
     statement = "INSERT INTO follows (follower_id,followee_id) VALUES (%s,%s)"
     cursor.executemany(statement,list(follows))
@@ -116,18 +122,31 @@ def populate_follows():
 
 def populate_posts():
     posts = []
-    for i in range(20):
-        a = random.randint(1,5)
-        posts.append((a,f'post #{i+1}'))
+    for i in range(num_posts):
+        a = random.randint(1,num_users)
+        posts.append((a,f'post #{i+1} by user {a}'))
     statement = "INSERT INTO posts (user_id,content) VALUES (%s,%s)"
     cursor.executemany(statement,posts)
     conn.commit()
     print("Added posts")
 
+def populate_comments():
+    posts = []
+    for i in range(num_comments):
+        a = random.randint(1,num_users)
+        b = random.randint(1,num_posts)
+        posts.append((a,f'comment #{i+1} on post {b}',b))
+    statement = "INSERT INTO comments (user_id,content,post_id) VALUES (%s,%s,%s)"
+    cursor.executemany(statement,posts)
+    conn.commit()
+    print("Added comments")
+
 drop_tables()
 create_tables()
 populate_users()
 populate_posts()
+populate_follows()
+populate_comments()
 
 cursor.close()
 conn.close()

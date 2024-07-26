@@ -23,17 +23,26 @@ Work in Progress :)
         - See if password is correct for a user
         ** 'username':{'type':'string','required':True}, 
         ** 'guess' :{'type':'string','required':True}
-    
-    PATCH /users/update/{user_id} {email or username}
-    -not implemented 
 
-    DELETE /users/delete/{user_id}
-    -not implemented
+    /{user_id}
 
-    GET /users/{user_id}/posts?limit&offset -> {posts:[{user_id, post_id,username, content, hours_ago}]}
-    'user_id':{'type':'string','required':True, 'str_int': True},
-    'limit':{'type':'string','required':True,'str_int':True},
-    'offset':{'type':'string','required':True,'str_int':True},
+        GET /users/{user_id}/posts?limit&offset -> {posts:[{user_id, post_id,username, content, hours_ago}]}
+        'user_id':{'type':'string','required':True, 'str_int': True},
+        'limit':{'type':'string','required':True,'str_int':True},
+        'offset':{'type':'string','required':True,'str_int':True},
+
+        GET /users/{user_id}/followers -> {"followers":[{user_id,username}]}
+        'user_id':{'type':'string','required':True, 'str_int': True},
+        'limit':{'type':'string','required':True,'str_int':True},
+        'offset':{'type':'string','required':True,'str_int':True},
+
+        PATCH /users/{user_id}/update {email or username}
+        -not implemented 
+
+        DELETE /users/{user_id}/delete
+        -not implemented
+
+    GET /users/{}
 
 /posts:
 
@@ -58,7 +67,7 @@ Work in Progress :)
             ** 'offset':{'type':'str_int','required':True}
             ** 'limit':{'type':'str_int','required':True}
 
-    /comment
+    /comment # probably change path name for consistency
 
         POST /posts/comment {user_id,post_id,content}
         - Comment on a post
@@ -86,11 +95,8 @@ Work in Progress :)
 
     GET /feed/new?limit&offset&user -> {posts:[{user_id, post_id,username, content, hours_ago, liked}]}
     - Gets new posts by accounts they follow
-    - Shows if the user liked if parameter
-    - not implemented
+    - Shows if the user liked if user parameter
 
     GET /feed/top?within&limit&user -> {posts:[{user_id, post_id,username, content, hours_ago}]}
     - Gets new posts by top within a time
     - not implemented
-    
-
