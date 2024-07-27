@@ -29,9 +29,14 @@ Work in Progress :)
         GET /users/{user_id}/posts?limit&offset -> {posts:[{user_id, post_id,username, content, hours_ago}]}
         'user_id':{'type':'string','required':True, 'str_int': True},
         'limit':{'type':'string','required':True,'str_int':True},
-        'offset':{'type':'string','required':True,'str_int':True},
+        'offset':{'type':'string','required':True,'str_int':True}
 
         GET /users/{user_id}/followers -> {"followers":[{user_id,username}]}
+        'user_id':{'type':'string','required':True, 'str_int': True},
+        'limit':{'type':'string','required':True,'str_int':True},
+        'offset':{'type':'string','required':True,'str_int':True}
+
+        GET /users/{user_id}/following -> {"followers":[{user_id,username}]}
         'user_id':{'type':'string','required':True, 'str_int': True},
         'limit':{'type':'string','required':True,'str_int':True},
         'offset':{'type':'string','required':True,'str_int':True},
@@ -41,8 +46,6 @@ Work in Progress :)
 
         DELETE /users/{user_id}/delete
         -not implemented
-
-    GET /users/{}
 
 /posts:
 
@@ -59,22 +62,20 @@ Work in Progress :)
         - Get a post's details and comments
         ** 'post_id':{'type':'int string','required':True}
 
-        /comments
+        /comment
 
-            GET /posts/{post_id}/comments?offset&limit -> {comments:[{user_id, post_id,username, content, hours_ago}]}
+            GET /posts/{post_id}/comment?offset&limit -> {comments:[{user_id, post_id,username, content, hours_ago}]}
             - Get comments from a post
             ** 'post_id':{'type':'str_int','required':True}
             ** 'offset':{'type':'str_int','required':True}
             ** 'limit':{'type':'str_int','required':True}
 
-    /comment # probably change path name for consistency
-
-        POST /posts/comment {user_id,post_id,content}
-        - Comment on a post
-        ** 'post_id':{'type':'integer','required':True}
-        ** 'post_id':{'type':'integer','required':True}
-        ** 'content':{'type':'string','required':True, 'minlength': 3, 'maxlength': 300}
-    
+            POST /posts/comment {user_id,post_id,content}
+            - Comment on a post
+            ** 'post_id':{'type':'integer','required':True}
+            ** 'post_id':{'type':'integer','required':True}
+            ** 'content':{'type':'string','required':True, 'minlength': 3, 'maxlength': 300}
+        
     /like
 
         - Not implemented

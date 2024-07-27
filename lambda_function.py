@@ -23,7 +23,6 @@ user_auth = "/users/auth"
 
 get_post_by_id = '/posts/id'
 post_create = '/posts/create'
-comment_on = '/posts/comment'
 
 follow_path = '/relationships/follow'
 unfollow_path = '/relationships/unfollow'
@@ -75,12 +74,13 @@ def lambda_handler(event,context):
                 return get_post(event)
             elif path == post_create and method == 'POST':
                 return create_post(event)
-            elif path == comment_on and method == 'POST':
-                return post_comment(event)
             else:
                 splits = path.split('/')
-                if len(splits)>3 and splits[3] == 'comments':
-                    return get_comments(event)
+                if len(splits)==4:
+                    if splits[3] == 'comment' and method == 'GET':
+                        return get_comments(event)
+                    elif splits[3] == 'comment' and method == 'POST':
+                        return post_comment(event)
         
         elif path.startswith('/relationships'):
             if path == follow_path and method == 'POST':
@@ -371,14 +371,16 @@ def get_comments(e):
 
 def post_comment(e):
     BODY = e['body']
-    
-    if not valid.post_comment.validate(BODY):
+    PP = e['pathParameters']
+    params = {'post_id':PP.get('post_id',"error"),'user_id':BODY.get('user_id'),'content':BODY.get('content')}
+
+    if not valid.post_comment.validate(params):
         print(valid.post_comment.errors)
-        return build_response(400,{'msg':'Error in Body'})
+        return build_response(400,{'msg':'Error in Params'})
     
-    user_id = BODY['user_id']
-    post_id = BODY['post_id']
-    content = BODY['content']
+    user_id = params['user_id']
+    post_id = params['post_id']
+    content = params['content']
 
     if not user_exists(user_id):
         return build_response(400,{'msg':'User does not exist'})

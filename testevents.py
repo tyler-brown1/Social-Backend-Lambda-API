@@ -74,23 +74,25 @@ unfollow_event = {
 
 post_comment_event = {
   "httpMethod": "POST",
-  "path": "/posts/comment",
+  "path": "/posts/1/comment",
   "body": {
-    "post_id": 2,
-    "user_id": 4,
-    "content": "Second comment!"
+    "user_id": 21,
+    "content": "Manual comment!"
+  },
+  "pathParameters":{
+      'post_id': 1
   }
 }
 
 get_comments_event = {
   "httpMethod": "GET",
-  "path": "/posts/1/comments",
+  "path": "/posts/1/comment",
   "queryStringParameters": {
     "limit": "20",
     "offset": "0"
   },
   "pathParameters":{
-    "post_id": "2"
+    "post_id": "1"
   }
 }
 
