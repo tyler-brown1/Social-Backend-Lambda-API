@@ -28,6 +28,7 @@ follow_path = '/relationships/follow'
 unfollow_path = '/relationships/unfollow'
 
 feed_new = '/feed/new'
+feed_followed = '/feed/followed'
 
 conn = psycopg2.connect(
     host=db_host,
@@ -91,6 +92,8 @@ def lambda_handler(event,context):
         elif path.startswith('/feed'):
             if path == feed_new and method == 'GET':
                 return get_feed_new(event)
+            elif path.startswith(feed_followed) and method == 'GET':
+                return get_feed_followed(event)
 
         return build_response(400,{"msg":"Not implemented for this endpoint"})
         
@@ -237,7 +240,11 @@ def validate_user(e):
         return build_response(400,{"msg": "Invalid Credentials"})
 
 def get_post(e):
-    params = e['pathParameters']
+    params =e['pathParameters']
+    QSP = e['queryStringParameters']
+
+    if 'user' in QSP:
+        params['user_id'] = QSP['user'] 
 
     if not valid.get_post.validate(params):
         print("error:",valid.get_post.errors)
@@ -245,22 +252,26 @@ def get_post(e):
     
     post_id = int(params['post_id'])
 
-    statement = """
-    SELECT users.user_id,username,content,posts.created_at 
-    FROM posts JOIN users ON posts.user_id = users.user_id 
-    WHERE post_id = %s
-    """
-    cursor.execute(statement,(post_id,))
-    res = cursor.fetchone()
-    if res is None:
-        return build_response(404,{'msg':'Post not found'})
+    if not post_exists(post_id):
+        return build_response(400,{"msg": "Post not found"})
     
-    elapsed = (datetime.now(timezone.utc)-res[3])
-    hours_ago = elapsed.days*24 + elapsed.seconds//3600
+    if 'userid' in params:
+        return build_response(200,{"msg": "Need to implement for user"})
+    else:
+        statement = """
+        SELECT users.user_id,username,content,posts.created_at 
+        FROM posts JOIN users ON posts.user_id = users.user_id 
+        WHERE post_id = %s
+        """
+        cursor.execute(statement,(post_id,))
+        res = cursor.fetchone()
+        
+        elapsed = (datetime.now(timezone.utc)-res[3])
+        hours_ago = elapsed.days*24 + elapsed.seconds//3600
 
-    obj = {'message':'Success','user_id': res[0],'username': res[1], 'content': res[2], 
-           'hours_ago': hours_ago, 'liked': "Not implemented"}
-    return build_response(200,obj)
+        obj = {'message':'Success','user_id': res[0],'username': res[1], 'content': res[2], 
+            'hours_ago': hours_ago}
+        return build_response(200,obj)
 
 
 def create_post(e):
@@ -401,8 +412,8 @@ def get_feed_new(e):
     if 'user' in QSP:
         params['user'] = QSP['user']
 
-    if not valid.get_feed_new.validate(params):
-        print(valid.get_feed_new.errors)
+    if not valid.get_feed.validate(params):
+        print(valid.get_feed.errors)
         return build_response(400,{"msg": "Error in params"})
 
     limit = params['limit']
@@ -429,6 +440,38 @@ def get_feed_new(e):
             hours_ago = elapsed.days*24 + elapsed.seconds//3600
             posts.append({'user_id':entry[2], 'post_id': entry[0], 'content': entry[3], 'hours_ago': hours_ago, 'username': entry[1]})
         return build_response(200,{"msg": "Success", "posts":posts})
+
+def get_feed_followed(e):
+    QSP = e['queryStringParameters']
+    PP = e['pathParameters']
+    params = {'limit':QSP.get('limit',20),'offset':QSP.get('offset',0), 'user': PP.get('user_id',"error")}
+
+    if not valid.get_feed.validate(params):
+        print(valid.get_feed.errors)
+        return build_response(400,{"msg": "Error in params"})
+
+    limit = params['limit']
+    offset = params['offset']
+    user_id = params['user']
+
+    statement = """
+    SELECT post_id, username, u.user_id, content, p.created_at
+    FROM posts p
+    JOIN follows f ON f.followee_id = p.user_id
+    JOIN users u ON u.user_id = p.user_id
+    WHERE follower_id = %s
+    ORDER BY post_id DESC
+    LIMIT %s
+    OFFSET %s
+    """
+    cursor.execute(statement,(user_id,limit,offset))
+    res = cursor.fetchall()
+    posts = []
+    for entry in res:
+        elapsed = (datetime.now(timezone.utc)-entry[4])
+        hours_ago = elapsed.days*24 + elapsed.seconds//3600
+        posts.append({'user_id':entry[2], 'post_id': entry[0], 'content': entry[3], 'hours_ago': hours_ago, 'username': entry[1], 'liked': 'N/A'})
+    return build_response(200,{"msg": "Success", "posts":posts})
 
 def get_user_followers(e):
     QSP = e['queryStringParameters']
@@ -481,7 +524,7 @@ def get_user_following(e):
     statement = """
     SELECT username, user_id
     FROM follows
-    JOIN users ON followee_id = user_id
+    JOIN users ON follower_id = user_id
     WHERE follower_id = %s
     ORDER BY followed_at DESC
     LIMIT %s
@@ -546,16 +589,14 @@ def build_response(status_code, body):
 #print(lambda_handler(get_comments_event,None))
 #print(lambda_handler(post_comment_event,None))
 #print(lambda_handler(get_user_posts_event,None))
-#print(lambda_handler(get_new_feed_event,None))
 #print(lambda_handler(get_followers_event,None))
 #print(lambda_handler(get_following_event,None))
-
+#print(lambda_handler(get_new_feed_event,None))
+#print(lambda_handler(get_followed_feed_event,None))
 
 
 
 # GOALS
-# Change post path
-# Feed by following
 
 # Delete user
 # Delete post

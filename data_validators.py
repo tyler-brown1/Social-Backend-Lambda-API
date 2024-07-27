@@ -37,7 +37,8 @@ create_post = MyValidator({
     'user_id':{'type':'integer','required':True, 'pos': True}
 })
 get_post = MyValidator({
-    'post_id':{'type':'string','str_int':True,'required':True}
+    'post_id':{'type':'string','str_int':True,'required':True},
+    'user_id':{'type':'string','str_int':True}
 })
 follow = MyValidator({
     'follower_id':{'type':'integer','required':True, 'pos': True},
@@ -62,13 +63,18 @@ get_user_posts = MyValidator({
     'limit':{'type':'string','required':True,'str_int':True},
     'offset':{'type':'string','required':True,'str_int':True},
 })
-get_feed_new = MyValidator({
+get_feed = MyValidator({ # For ones we don't need user
     'user':{'type':'string', 'str_int': True}, # not required
     'limit':{'type':'string','required':True,'str_int':True},
     'offset':{'type':'string','required':True,'str_int':True},
 })
-get_user_follows = MyValidator({ # sane for followers and following
+get_user_follows = MyValidator({ # same for followers and following
     'user_id':{'type':'string', 'str_int': True, 'required':True},
+    'limit':{'type':'string','required':True,'str_int':True},
+    'offset':{'type':'string','required':True,'str_int':True},
+})
+get_feed_followed = MyValidator({ 
+    'user':{'type':'string', 'str_int': True, 'required':True},
     'limit':{'type':'string','required':True,'str_int':True},
     'offset':{'type':'string','required':True,'str_int':True},
 })

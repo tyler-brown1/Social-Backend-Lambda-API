@@ -48,7 +48,7 @@ create_post_event = {
 
 get_post_event = {
   "httpMethod": "GET",
-  "path": "/posts/id/1",
+  "path": "/posts/id/1?user=1",
   "pathParameters": {
     "post_id": "1"
   }
@@ -112,7 +112,7 @@ get_new_feed_event = {
   "httpMethod": "GET",
   "path": "/feed/new",
   "queryStringParameters": {
-    "limit": "3", 
+    "limit": "10", 
     "offset": "1",
     #"user":"1"
   }
@@ -139,5 +139,17 @@ get_following_event = {
   },
   "pathParameters":{
     "user_id": "1",
+  }
+}
+
+get_followed_feed_event = {
+  "httpMethod": "GET",
+  "path": "/feed/followed/1",
+  "queryStringParameters": {
+    "limit": "10", 
+    "offset": "1",
+  },
+  "pathParameters":{
+      "user_id": "1"
   }
 }

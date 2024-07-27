@@ -94,10 +94,18 @@ Work in Progress :)
 
 /feed
 
-    GET /feed/new?limit&offset&user -> {posts:[{user_id, post_id,username, content, hours_ago, liked}]}
-    - Gets new posts by accounts they follow
-    - Shows if the user liked if user parameter
+    /new
 
-    GET /feed/top?within&limit&user -> {posts:[{user_id, post_id,username, content, hours_ago}]}
-    - Gets new posts by top within a time
-    - not implemented
+        GET /feed/new?limit&offset&user -> {posts:[{user_id, post_id,username, content, hours_ago, liked}]}
+        - Gets new posts, show if user liked
+
+    /followed
+
+        GET /feed/followed/{user_id}?limit&offset -> {posts:[{user_id, post_id,username, content, hours_ago, liked}]}
+        - Gets new posts by accounts they follow, show if user liked
+
+    /top
+
+        GET /feed/top?within&limit&user -> {posts:[{user_id, post_id,username, content, hours_ago}]}
+        - Gets new posts by top within a time
+        - not implemented
