@@ -1,25 +1,25 @@
-import os,psycopg2,random
+import os
+import psycopg2
+import random
 from dotenv import load_dotenv
+
 load_dotenv()
 
 """
 Some Scripts if I want to drop/populate/update schema in tables
 """
 
-db_host = os.environ['DB_HOST']
-db_name = os.environ['DB_NAME']
-db_user = os.environ['DB_USER']
-db_password = os.environ['DB_PASSWORD']
-db_port = os.environ['DB_PORT']
+db_host = os.environ["DB_HOST"]
+db_name = os.environ["DB_NAME"]
+db_user = os.environ["DB_USER"]
+db_password = os.environ["DB_PASSWORD"]
+db_port = os.environ["DB_PORT"]
 
 conn = psycopg2.connect(
-    host=db_host,
-    dbname=db_name,
-    user=db_user,
-    password=db_password,
-    port=db_port
+    host=db_host, dbname=db_name, user=db_user, password=db_password, port=db_port
 )
-cursor = conn.cursor()  
+cursor = conn.cursor()
+
 
 def create_tables():
     users_create = """
@@ -81,6 +81,7 @@ def delete_tables():
     cursor.execute(follows_delete)
     print("Deleted")
 
+
 def drop_tables():
     users_drop = "DROP TABLE users"
     posts_drop = "DROP TABLE posts"
@@ -93,48 +94,55 @@ def drop_tables():
     cursor.execute(users_drop)
     print("Dropped tables")
 
+
 num_users = 30
 num_posts = 100
 num_follows = 200
 num_comments = 100
 
+
 def populate_users():
     users = []
     for i in range(num_users):
-        users.append((f'user{i+1}',"a"))
+        users.append((f"user{i+1}", "a"))
     statement = "INSERT INTO users (username,password_hash) VALUES(%s,%s)"
-    cursor.executemany(statement,users)
+    cursor.executemany(statement, users)
     print("Added users")
+
 
 def populate_follows():
     follows = set()
     for i in range(num_follows):
-        a = random.randint(1,num_users)
-        b = random.randint(1,num_users)
-        if a==b or (a,b) in follows: continue
-        follows.add((a,b))
+        a = random.randint(1, num_users)
+        b = random.randint(1, num_users)
+        if a == b or (a, b) in follows:
+            continue
+        follows.add((a, b))
     statement = "INSERT INTO follows (follower_id,followee_id) VALUES (%s,%s)"
-    cursor.executemany(statement,list(follows))
+    cursor.executemany(statement, list(follows))
     print("Added follows")
+
 
 def populate_posts():
     posts = []
     for i in range(num_posts):
-        a = random.randint(1,num_users)
-        posts.append((a,f'post #{i+1} by user {a}'))
+        a = random.randint(1, num_users)
+        posts.append((a, f"post #{i+1} by user {a}"))
     statement = "INSERT INTO posts (user_id,content) VALUES (%s,%s)"
-    cursor.executemany(statement,posts)
+    cursor.executemany(statement, posts)
     print("Added posts")
+
 
 def populate_comments():
     posts = []
     for i in range(num_comments):
-        a = random.randint(1,num_users)
-        b = random.randint(1,num_posts)
-        posts.append((a,f'comment #{i+1} on post {b}',b))
+        a = random.randint(1, num_users)
+        b = random.randint(1, num_posts)
+        posts.append((a, f"comment #{i+1} on post {b}", b))
     statement = "INSERT INTO comments (user_id,content,post_id) VALUES (%s,%s,%s)"
-    cursor.executemany(statement,posts)
+    cursor.executemany(statement, posts)
     print("Added comments")
+
 
 drop_tables()
 create_tables()
@@ -146,4 +154,3 @@ conn.commit()
 
 cursor.close()
 conn.close()
-

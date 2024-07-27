@@ -5,9 +5,9 @@ Work in Progress :)
 
 /users:
     
-    /username
+    /username    || Add user qsp to see if followed
 
-        GET /users/username/{username} -> {user_id, username, email, follower_ct, following_ct}
+        GET /users/username/{username}?user -> {user_id, username, email, follower_ct, following_ct, following_me,am_following}
         - Get a users information
         - Need to implement followers,following
         ** 'username':{'type':'string','required':True,'str_int':True}
