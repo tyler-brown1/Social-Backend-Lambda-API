@@ -4,11 +4,13 @@ Work in Progress :)
 =================
 
 /users:
+    
+    /username
 
-    GET /users/username/{username} -> {user_id, username, email, follower_ct, following_ct}
-    - Get a users information
-    - Need to implement followers,following
-    ** 'user':{'type':'string','required':True}
+        GET /users/username/{username} -> {user_id, username, email, follower_ct, following_ct}
+        - Get a users information
+        - Need to implement followers,following
+        ** 'username':{'type':'string','required':True,'str_int':True}
     
     /create
 
@@ -21,25 +23,27 @@ Work in Progress :)
 
         POST /auth {username,password} -> {user_id if valid}
         - See if password is correct for a user
-        ** 'username':{'type':'string','required':True}, 
+        ** 'username':{'type':'string','required':True},
         ** 'guess' :{'type':'string','required':True}
 
     /{user_id}
 
         GET /users/{user_id}/posts?limit&offset -> {posts:[{user_id, post_id,username, content, hours_ago}]}
-        'user_id':{'type':'string','required':True, 'str_int': True},
-        'limit':{'type':'string','required':True,'str_int':True},
-        'offset':{'type':'string','required':True,'str_int':True}
+        ** 'user_id':{'type':'string','required':True, 'str_int': True},
+        ** 'limit':{'type':'string','required':True,'str_int':True},
+        ** 'offset':{'type':'string','required':True,'str_int':True},
 
-        GET /users/{user_id}/followers -> {"followers":[{user_id,username}]}
-        'user_id':{'type':'string','required':True, 'str_int': True},
-        'limit':{'type':'string','required':True,'str_int':True},
-        'offset':{'type':'string','required':True,'str_int':True}
+        /follows
 
-        GET /users/{user_id}/following -> {"followers":[{user_id,username}]}
-        'user_id':{'type':'string','required':True, 'str_int': True},
-        'limit':{'type':'string','required':True,'str_int':True},
-        'offset':{'type':'string','required':True,'str_int':True},
+            GET /users/{user_id}/follows -> {"followers":[{user_id,username}]}
+            ** 'user_id':{'type':'string', 'str_int': True, 'required':True},
+            ** 'limit':{'type':'string','required':True,'str_int':True},
+            ** 'offset':{'type':'string','required':True,'str_int':True},
+
+            GET /users/{user_id}/follows -> {"followers":[{user_id,username}]}
+            ** 'user_id':{'type':'string','required':True, 'str_int': True},
+            ** 'limit':{'type':'string','required':True,'str_int':True},
+            ** 'offset':{'type':'string','required':True,'str_int':True},
 
         PATCH /users/{user_id}/update {email or username}
         -not implemented 
@@ -54,43 +58,50 @@ Work in Progress :)
         POST /posts/create {user_id,content} -> {post_id if valid}
         - Create a new post
         ** 'content':{'type':'string','required':True, 'minlength': 3, 'maxlength': 300},
-        ** 'userid':{'type':'string','required':True}
+        ** 'user_id':{'type':'integer','required':True, 'pos': True}
 
     /{post_id}
         
         GET /posts/{post_id}?user -> {poster_name, poster_id, content, hours_ago, liked <- not implemented}
         - Get a post's details and comments
-        ** 'post_id':{'type':'int string','required':True}
+        ** 'post_id':{'type':'string','str_int':True,'required':True},
+        ** 'user_id':{'type':'string','str_int':True}
 
         /comment
 
             GET /posts/{post_id}/comment?offset&limit -> {comments:[{user_id, post_id,username, content, hours_ago}]}
             - Get comments from a post
-            ** 'post_id':{'type':'str_int','required':True}
-            ** 'offset':{'type':'str_int','required':True}
-            ** 'limit':{'type':'str_int','required':True}
+            ** 'post_id':{'type':'string','required':True,'str_int':True},
+            ** 'limit':{'type':'string','required':True,'str_int':True},
+            ** 'offset':{'type':'string','required':True,'str_int':True},
 
             POST /posts/comment {user_id,post_id,content}
             - Comment on a post
-            ** 'post_id':{'type':'integer','required':True}
-            ** 'post_id':{'type':'integer','required':True}
+            ** 'post_id':{'type':'integer','required':True, 'pos': True},
+            ** 'user_id':{'type':'integer','required':True,'pos': True},
             ** 'content':{'type':'string','required':True, 'minlength': 3, 'maxlength': 300}
         
-    /like
+        /like
 
-        - Not implemented
+            POST /posts/{post_id}/like
+            - Like a post
+            - Not implemented
+
+            POST /posts/{post_id}/unlike
+            - Remove a like
+            - Not implemented
 
 /relationships
 
     /follow
         POST relationships/follow {follower_id, followee_id}
         - Follow a user
-        ** 'follower_id':{'type':'integer'},
-        ** 'followee_id':{'type':'integer'}
+        ** 'follower_id':{'type':'integer','required':True, 'pos': True},
+        ** 'followee_id':{'type':'integer','required':True, 'pos': True}
 
     /unfollow
-        ** 'unfollower_id':{'type':'integer'},
-        ** 'unfollowee_id':{'type':'integer'}
+        ** 'unfollower_id':{'type':'integer','required':True, 'pos': True},
+        ** 'unfollowee_id':{'type':'integer','required':True, 'pos': True}
 
 /feed
 
@@ -98,11 +109,17 @@ Work in Progress :)
 
         GET /feed/new?limit&offset&user -> {posts:[{user_id, post_id,username, content, hours_ago, liked}]}
         - Gets new posts, show if user liked
+        ** 'user':{'type':'string', 'str_int': True}, # not required
+        ** 'limit':{'type':'string','required':True,'str_int':True},
+        ** 'offset':{'type':'string','required':True,'str_int':True},
 
     /followed
 
         GET /feed/followed/{user_id}?limit&offset -> {posts:[{user_id, post_id,username, content, hours_ago, liked}]}
         - Gets new posts by accounts they follow, show if user liked
+        ** 'user':{'type':'string', 'str_int': True, 'required':True},
+        ** 'limit':{'type':'string','required':True,'str_int':True},
+        ** 'offset':{'type':'string','required':True,'str_int':True},
 
     /top
 

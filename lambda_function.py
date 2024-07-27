@@ -234,7 +234,7 @@ def validate_user(e):
     hashed_password = hashlib.pbkdf2_hmac('sha256', guess.encode('utf-8'), salt, 10000)  # hash input
 
     if hashed_password == stored_password_hash:
-        obj = {'user_id': found[1],'message': "Success"}
+        obj = {'user_id': found[1],'message': "Successful login"}
         return build_response(200,obj)
     else:
         return build_response(400,{"msg": "Invalid Credentials"})
@@ -494,7 +494,7 @@ def get_user_followers(e):
     FROM follows
     JOIN users ON follower_id = user_id
     WHERE followee_id = %s
-    ORDER BY followed_at DESC
+    ORDER BY follow_id DESC
     LIMIT %s
     OFFSET %s
     """
@@ -526,7 +526,7 @@ def get_user_following(e):
     FROM follows
     JOIN users ON follower_id = user_id
     WHERE follower_id = %s
-    ORDER BY followed_at DESC
+    ORDER BY follow_id DESC
     LIMIT %s
     OFFSET %s
     """
@@ -558,7 +558,7 @@ def post_exists(post_id):
         return True
 
 # see if follow exists
-def follow_exists(follower_id,followee_id):
+def follow_exists(follower_id, followee_id):
     statement = "SELECT * FROM follows WHERE follower_id = %s AND followee_id = %s"
     cursor.execute(statement,(follower_id,followee_id))
 
@@ -567,6 +567,9 @@ def follow_exists(follower_id,followee_id):
         return False
     else:
         return True
+
+def like_exists(post_id, user_id):
+    raise NotImplementedError
 
 # Return json object with code and body
 def build_response(status_code, body):
@@ -581,7 +584,7 @@ def build_response(status_code, body):
 #print(lambda_handler(create_user_event,None))
 #print(lambda_handler(get_user_event,None))
 #print(lambda_handler(validate_user_event_bad,None))
-#print(lambda_handler(validate_user_event_good,None))
+print(lambda_handler(validate_user_event_good,None))
 #print(lambda_handler(create_post_event,None))
 #print(lambda_handler(get_post_event,None))
 #print(lambda_handler(follow_event,None))

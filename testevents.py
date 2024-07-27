@@ -6,7 +6,7 @@ create_user_event = {
   "httpMethod": "POST",
   "path": "/users/create",
   "body": {
-    "username": "bob5",
+    "username": "bob3",
     "password": "thisIsMyPassword"
   }
 }
