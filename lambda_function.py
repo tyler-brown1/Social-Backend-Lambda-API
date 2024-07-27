@@ -57,7 +57,7 @@ def lambda_handler(event, context):
     if "pathParameters" not in event:
         event["pathParameters"] = {}
 
-    try:  
+    try:
         if path.startswith("/users"):
             if path.startswith(get_user_by_username) and method == "GET":
                 return get_user(event)
@@ -155,7 +155,11 @@ def get_user(e):
     """
     Get a user by username
     """
-    params = e["pathParameters"]
+    PP = e["pathParameters"]
+    QSP = e['queryStringParameters']
+    params = {'username': PP.get('username','error')}
+    if 'user' in QSP:
+        params['user_id'] = QSP['user']
 
     if not valid.get_user.validate(params):
         print(valid.get_user.errors)
@@ -163,38 +167,76 @@ def get_user(e):
 
     username = params["username"]
 
-    statement = """
-    SELECT user_id,
-    (
-        SELECT COUNT(*)
-        FROM follows
-        WHERE follower_id = user_id
-    ) AS followers,
-    (
-        SELECT COUNT(*)
-        FROM follows
-        WHERE followee_id = user_id
-    )
-    FROM users 
-    WHERE username = %s;
-    """
+    if 'user_id' in params:
+        user_id = params['user_id']
+        statement = """
+        SELECT user_id,
+        (
+            SELECT COUNT(*)
+            FROM follows
+            WHERE follower_id = user_id
+        ) AS following_ct,
+        (
+            SELECT COUNT(*)
+            FROM follows
+            WHERE followee_id = user_id
+        ) AS followers_ct,
+        CASE WHEN f1.follower_id IS NOT NULL THEN TRUE ELSE FALSE END AS following_me,
+        CASE WHEN f2.follower_id IS NOT NULL THEN TRUE ELSE FALSE END AS am_following
+        FROM users u
+        LEFT JOIN follows f1 on f1.follower_id = user_id AND f1.followee_id = %s
+        LEFT JOIN follows f2 on f2.follower_id = %s AND f2.followee_id = u.user_id
 
-    cursor.execute(statement, (username,))
-    res = cursor.fetchone()
-    # Check if the username exists
-    if res is None:
-        return build_response(404, {"msg": "User does not exist"})
+        WHERE username = %s;
+        """
 
-    obj = {
-        "username": username,
-        "user_id": res[0],
-        "followers_ct": res[2],
-        "following_ct": res[1],
-        "msg": "Success",
-        "following_me": "N/A",
-        "am_following": "N/A"
-    }
-    return build_response(200, obj)
+        cursor.execute(statement, (user_id,user_id,username))
+        res = cursor.fetchone()
+        # See if item exists
+        if res is None:
+            return build_response(404, {"msg": "User does not exist"})
+
+        user = {
+            "username": username,
+            "user_id": res[0],
+            "followers_ct": res[2],
+            "following_ct": res[1],
+            "msg": "Success",
+            "following_me": res[3],
+            "am_following": res[4],
+        }
+        return build_response(200, user)
+    else:
+        statement = """
+        SELECT user_id,
+        (
+            SELECT COUNT(*)
+            FROM follows
+            WHERE follower_id = user_id
+        ) AS following_ct,
+        (
+            SELECT COUNT(*)
+            FROM follows
+            WHERE followee_id = user_id
+        ) AS followers_ct
+        FROM users 
+        WHERE username = %s;
+        """
+
+        cursor.execute(statement, (username,))
+        res = cursor.fetchone()
+        # Check if the username exists
+        if res is None:
+            return build_response(404, {"msg": "User does not exist"})
+
+        user = {
+            "username": username,
+            "user_id": res[0],
+            "followers_ct": res[2],
+            "following_ct": res[1],
+            "msg": "Success"
+        }
+        return build_response(200, user)
 
 
 def get_user_posts(e):
@@ -244,7 +286,7 @@ def get_user_posts(e):
                 "content": entry[1],
                 "hours_ago": hours_ago,
                 "username": entry[3],
-                "liked": "N/A"
+                "liked": "N/A",
             }
         )
 
@@ -277,9 +319,7 @@ def validate_user(e):
     stored_hash = found[0]
     storedb64 = base64.b64decode(stored_hash)
     salt, stored_password_hash = storedb64[:16], storedb64[16:]
-    hashed_password = hashlib.pbkdf2_hmac(
-        "sha256", guess.encode("utf-8"), salt, 10000
-    )
+    hashed_password = hashlib.pbkdf2_hmac("sha256", guess.encode("utf-8"), salt, 10000)
     # Hash input and compare to hash
     if hashed_password == stored_password_hash:
         obj = {"user_id": found[1], "message": "Successful login"}
@@ -308,7 +348,7 @@ def get_post(e):
         return build_response(400, {"msg": "Post not found"})
 
     if "userid" in params:
-        return build_response(200, {"msg": "Need to implement for user"})
+        """Implement Likes"""
     else:
         statement = """
         SELECT users.user_id,username,content,posts.created_at 
@@ -327,7 +367,7 @@ def get_post(e):
             "username": res[1],
             "content": res[2],
             "hours_ago": hours_ago,
-            "liked": "N/A"
+            "liked": "N/A",
         }
         return build_response(200, obj)
 
@@ -366,7 +406,7 @@ def follow(e):
         return build_response(400, {"msg": "Error in body"})
 
     follower_id = BODY["follower_id"]
-    followee_id = BODY["followee_id"] 
+    followee_id = BODY["followee_id"]
     # Cannot self-follow
     if follower_id == followee_id:
         return build_response(400, {"msg": "Cannot have same follower and followee"})
@@ -707,6 +747,7 @@ def follow_exists(follower_id, followee_id):
     else:
         return True
 
+
 # See if like exists
 def like_exists(post_id, user_id):
     raise NotImplementedError
@@ -740,8 +781,10 @@ def build_response(status_code, body):
 
 # GOALS
 
+# Add followed to get username
 # Delete user
 # Delete post
 # Patch email,username,phone number
 # Implement post likes
 # Feed by likes
+# Hashtags in future?

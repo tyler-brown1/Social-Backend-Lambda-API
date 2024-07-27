@@ -28,19 +28,26 @@ Work in Progress :)
 
     /{user_id}
 
-        GET /users/{user_id}/posts?limit&offset -> {posts:[{user_id, post_id,username, content, hours_ago}]}
-        ** 'user_id':{'type':'string','required':True, 'str_int': True},
-        ** 'limit':{'type':'string','required':True,'str_int':True},
-        ** 'offset':{'type':'string','required':True,'str_int':True},
+        GET /users/{user_id} # Not sure if I will implement
+
+        /posts
+
+            GET /users/{user_id}/posts?limit&offset -> {posts:[{user_id, post_id,username, content, hours_ago}]}
+            - Get a list of a user's posts
+            ** 'user_id':{'type':'string','required':True, 'str_int': True},
+            ** 'limit':{'type':'string','required':True,'str_int':True},
+            ** 'offset':{'type':'string','required':True,'str_int':True},
 
         /follows
 
             GET /users/{user_id}/follows -> {"followers":[{user_id,username}]}
+            - Get who a certain user follows
             ** 'user_id':{'type':'string', 'str_int': True, 'required':True},
             ** 'limit':{'type':'string','required':True,'str_int':True},
             ** 'offset':{'type':'string','required':True,'str_int':True},
 
             GET /users/{user_id}/follows -> {"followers":[{user_id,username}]}
+            - Get a user's followers
             ** 'user_id':{'type':'string','required':True, 'str_int': True},
             ** 'limit':{'type':'string','required':True,'str_int':True},
             ** 'offset':{'type':'string','required':True,'str_int':True},

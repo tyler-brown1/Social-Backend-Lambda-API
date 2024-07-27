@@ -26,7 +26,8 @@ create_user = MyValidator({
     'password':{'type':'string','minlength':5,'maxlength':18,'required':True}
 })
 get_user = MyValidator({
-    'username':{'type':'string','required':True,'str_int':True}
+    'username':{'type':'string','required':True},
+    'user_id':{'type':'string','str_int':True}
 })
 validate_user = MyValidator({
     'username':{'type':'string','required':True},
