@@ -34,7 +34,7 @@ def create_tables():
     posts_create = """
     CREATE TABLE posts(
         post_id SERIAL PRIMARY KEY,
-        user_id INT NOT NULL,
+        user_id INT,
         content VARCHAR(300) NOT NULL,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE SET NULL
@@ -54,7 +54,7 @@ def create_tables():
     CREATE TABLE comments(
         comment_id SERIAL PRIMARY KEY,
         post_id INT NOT NULL,
-        user_id INT NOT NULL,
+        user_id INT,
         content VARCHAR(300) NOT NULL,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE SET NULL,

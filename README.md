@@ -5,7 +5,7 @@ Work in Progress :)
 
 /users:
     
-    /username    || Add user qsp to see if followed
+    /username
 
         GET /users/username/{username}?user -> {user_id, username, email, follower_ct, following_ct, following_me,am_following}
         - Get a users information
@@ -29,6 +29,10 @@ Work in Progress :)
     /{user_id}
 
         GET /users/{user_id} # Not sure if I will implement
+
+        DELETE /users/{user_id}
+        - Deletes a user
+        ** 'user_id':{'type':'string','required':True}
 
         /posts
 
@@ -54,15 +58,11 @@ Work in Progress :)
 
         PATCH /users/{user_id}/update {email or username}
         -not implemented 
-
-        DELETE /users/{user_id}/delete
-        -not implemented
-
 /posts:
 
     /create 
 
-        POST /posts/create {user_id,content} -> {post_id if valid}
+        POST /posts/create {user_id,content} -> {post_id}
         - Create a new post
         ** 'content':{'type':'string','required':True, 'minlength': 3, 'maxlength': 300},
         ** 'user_id':{'type':'integer','required':True, 'pos': True}

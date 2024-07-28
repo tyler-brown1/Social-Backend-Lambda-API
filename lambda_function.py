@@ -67,12 +67,15 @@ def lambda_handler(event, context):
                 return validate_user(event)
             else:
                 splits = path.split("/")
-                if len(splits) == 4:
-                    if splits[3] == "posts":
+                if len(splits) == 3:
+                    if method == "DELETE":
+                        return delete_user(event)
+                elif len(splits) == 4:
+                    if splits[3] == "posts" and method == "GET":
                         return get_user_posts(event)
-                    elif splits[3] == "followers":
+                    elif splits[3] == "followers" and method == "GET":
                         return get_user_followers(event)
-                    elif splits[3] == "following":
+                    elif splits[3] == "following" and method == "GET":
                         return get_user_following(event)
 
         elif path.startswith("/posts"):
@@ -160,14 +163,18 @@ def get_user(e):
     params = {'username': PP.get('username','error')}
     if 'user' in QSP:
         params['user_id'] = QSP['user']
+        if not user_exists(QSP['user']):
+            return build_response(404,'Query user not found')
 
     if not valid.get_user.validate(params):
         print(valid.get_user.errors)
         return build_response(400, {"msg": "Error in parameters"})
 
+
     username = params["username"]
 
     if 'user_id' in params:
+        
         user_id = params['user_id']
         statement = """
         SELECT user_id,
@@ -313,7 +320,7 @@ def validate_user(e):
     cursor.execute(get_user_statement, (user,))
     found = cursor.fetchone()
     if not found:
-        return build_response(400, {"msg": "Username does not exist"})
+        return build_response(404, {"msg": "Username not found"})
 
     # Check password
     stored_hash = found[0]
@@ -326,6 +333,24 @@ def validate_user(e):
         return build_response(200, obj)
     else:
         return build_response(401, {"msg": "Invalid Credentials"})
+
+def delete_user(e):
+    PP = e['pathParameters']
+    
+    if not valid.delete_user.validate(PP):
+        print(valid.delete_user.errors)
+        return build_response(400, {"msg": "Error in body"})
+
+    user_id = int(PP['user_id'])
+
+    if not user_exists(user_id):
+        return build_response(400, 'User not found')
+    
+    statement = "DELETE FROM users WHERE user_id = %s"
+
+    cursor.execute(statement,(user_id,))
+    conn.commit()
+    return build_response(200, "Successfully deleted")
 
 
 def get_post(e):
@@ -600,10 +625,13 @@ def get_feed_followed(e):
     if not valid.get_feed.validate(params):
         print(valid.get_feed.errors)
         return build_response(400, {"msg": "Error in params"})
-
+    
     limit = params["limit"]
     offset = params["offset"]
     user_id = params["user"]
+
+    if not user_exists(user_id):
+        return build_response(404, {"msg": "User not found"})
 
     statement = """
     SELECT post_id, username, u.user_id, content, p.created_at
@@ -752,7 +780,6 @@ def follow_exists(follower_id, followee_id):
 def like_exists(post_id, user_id):
     raise NotImplementedError
 
-
 # Return json object with code and body
 def build_response(status_code, body):
     return {
@@ -762,26 +789,27 @@ def build_response(status_code, body):
     }
 
 
-# print(lambda_handler(mock.create_user_event,None))
-# print(lambda_handler(mock.get_user_event,None))
-# print(lambda_handler(mock.validate_user_event_bad,None))
-# print(lambda_handler(mock.validate_user_event_good,None))
-# print(lambda_handler(mock.create_post_event,None))
-# print(lambda_handler(mock.get_post_event,None))
-# print(lambda_handler(mock.follow_event,None))
-# print(lambda_handler(mock.unfollow_event,None))
-# print(lambda_handler(mock.get_comments_event,None))
-# print(lambda_handler(mock.post_comment_event,None))
-# print(lambda_handler(mock.get_user_posts_event,None))
-# print(lambda_handler(mock.get_followers_event,None))
-# print(lambda_handler(mock.get_following_event,None))
-# print(lambda_handler(mock.get_new_feed_event,None))
-# print(lambda_handler(mock.get_followed_feed_event,None))
+#print(lambda_handler(mock.create_user_event,None))
+#print(lambda_handler(mock.get_user_event,None))
+#print(lambda_handler(mock.validate_user_event_bad,None))
+#print(lambda_handler(mock.validate_user_event_good,None))
+#print(lambda_handler(mock.create_post_event,None))
+#print(lambda_handler(mock.get_post_event,None))
+#print(lambda_handler(mock.follow_event,None))
+#print(lambda_handler(mock.unfollow_event,None))
+#print(lambda_handler(mock.get_comments_event,None))
+#print(lambda_handler(mock.post_comment_event,None))
+#print(lambda_handler(mock.get_user_posts_event,None))
+#print(lambda_handler(mock.get_followers_event,None))
+#print(lambda_handler(mock.get_following_event,None))
+#print(lambda_handler(mock.get_new_feed_event,None))
+print(lambda_handler(mock.get_followed_feed_event,None))
+#print(lambda_handler(mock.delete_user_event,None))
+
 
 
 # GOALS
 
-# Add followed to get username
 # Delete user
 # Delete post
 # Patch email,username,phone number

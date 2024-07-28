@@ -5,16 +5,22 @@ Mock Event objects to test
 create_user_event = {
     "httpMethod": "POST",
     "path": "/users/create",
-    "body": {"username": "bob3", "password": "thisIsMyPassword"},
+    "body": {"username": "user1", "password": "thisIsMyPassword"},
 }
 
 get_user_event = {
     "httpMethod": "GET",
     "path": "/users/username/user1",
-    "pathParameters": {"username": "user26"},
+    "pathParameters": {"username": "user4"},
     "queryStringParameters":{
-        "user":"21"
+        "user":"27"
     }
+}
+
+delete_user_event = {
+    "httpMethod": "DELETE",
+    "path": "/users/1",
+    "pathParameters": {"user_id":"1"},
 }
 
 validate_user_event_bad = {
@@ -32,7 +38,7 @@ validate_user_event_good = {
 create_post_event = {
     "httpMethod": "POST",
     "path": "/posts/create",
-    "body": {"user_id": 1, "content": "First post"},
+    "body": {"user_id": 11, "content": "New post"},
 }
 
 get_post_event = {
@@ -79,20 +85,20 @@ get_new_feed_event = {
     "path": "/feed/new",
     "queryStringParameters": {
         "limit": "10",
-        "offset": "1",
+        "offset": "0",
         # "user":"1"
     },
 }
 
 get_followers_event = {
     "httpMethod": "GET",
-    "path": "/users/1/followers",
+    "path": "/users/2/followers",
     "queryStringParameters": {
         "limit": "30",
         "offset": "0",
     },
     "pathParameters": {
-        "user_id": "1",
+        "user_id": "2",
     },
 }
 
@@ -115,5 +121,5 @@ get_followed_feed_event = {
         "limit": "10",
         "offset": "1",
     },
-    "pathParameters": {"user_id": "1"},
+    "pathParameters": {"user_id": "3"},
 }

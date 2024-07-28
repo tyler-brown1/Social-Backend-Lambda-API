@@ -33,6 +33,9 @@ validate_user = MyValidator({
     'username':{'type':'string','required':True},
     'guess' :{'type':'string','required':True}
 })
+delete_user = MyValidator({
+    'user_id':{'type':'string','required':True, 'str_int':True},
+})
 create_post = MyValidator({
     'content':{'type':'string','required':True, 'minlength': 3, 'maxlength': 300},
     'user_id':{'type':'integer','required':True, 'pos': True}
